@@ -1,0 +1,10 @@
+<!-- Placeholder PWA icons - Replace with actual icons -->
+<!-- Generate actual icons using tools like https://realfavicongenerator.net/ -->
+
+<!-- pwa-192x192.png - 192x192 icon -->
+<!-- pwa-512x512.png - 512x512 icon -->
+<!-- apple-touch-icon.png - Apple touch icon -->
+<!-- favicon.ico - Browser favicon -->
+<!-- safari-pinned-tab.svg - Safari pinned tab icon -->
+
+<!-- For now, copy vite.svg as placeholders -->

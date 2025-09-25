@@ -1,0 +1,460 @@
+{
+  "nav": {
+    "home": "Home",
+    "screening": "Mental Health Screening",
+    "chat": "AI Chat Support",
+    "booking": "Book Appointment",
+    "forum": "Community Forum",
+    "admin": "Admin Dashboard",
+    "moderator": "Moderator"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "filter": "Filter",
+    "clear": "Clear",
+    "of": "of",
+    "navigate": "Navigate",
+    "close": "Close",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "continue": "Continue",
+    "skip": "Skip",
+    "finish": "Finish",
+    "start": "Start",
+    "stop": "Stop",
+    "pause": "Pause",
+    "resume": "Resume"
+  },
+  "errors": {
+    "generic": "An unexpected error occurred. Please try again.",
+    "network": "Network error. Please check your connection.",
+    "timeout": "Request timed out. Please try again.",
+    "unauthorized": "You are not authorized to perform this action.",
+    "forbidden": "Access denied. You don't have permission.",
+    "notFound": "The requested resource was not found.",
+    "validation": "Please check your input and try again.",
+    "server": "Server error. Please try again later.",
+    "unknown": "Unknown error occurred.",
+    "sessionExpired": "Your session has expired. Please log in again.",
+    "tooManyRequests": "Too many requests. Please try again later."
+  },
+  "success": {
+    "saved": "Successfully saved!",
+    "updated": "Successfully updated!",
+    "deleted": "Successfully deleted!",
+    "created": "Successfully created!",
+    "sent": "Successfully sent!",
+    "completed": "Successfully completed!",
+    "submitted": "Successfully submitted!"
+  },
+  "home": {
+    "welcome": "Welcome to MindCare Platform",
+    "subtitle": "Your journey to better mental health starts here",
+    "getStarted": "Get Started",
+    "features": {
+      "screening": "Mental Health Assessment",
+      "chat": "24/7 AI Support",
+      "booking": "Professional Counseling",
+      "forum": "Community Support"
+    },
+    "hero": {
+      "title": "Comprehensive Mental Health Support",
+      "description": "Access professional mental health services, AI-powered support, and a caring community all in one place.",
+      "cta": "Start Your Journey",
+      "learnMore": "Learn More"
+    },
+    "stats": {
+      "users": "Active Users",
+      "sessions": "Support Sessions",
+      "satisfaction": "Satisfaction Rate"
+    }
+  },
+  "auth": {
+    "login": "Login",
+    "signup": "Sign Up",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot Password?",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "rememberMe": "Remember me",
+    "signInWith": "Sign in with",
+    "orContinueWith": "Or continue with",
+    "createAccount": "Create Account",
+    "welcome": "Welcome back!",
+    "getStarted": "Let's get started",
+    "errors": {
+      "invalidCredentials": "Invalid email or password",
+      "emailRequired": "Email is required",
+      "passwordRequired": "Password is required",
+      "passwordMismatch": "Passwords do not match",
+      "emailInvalid": "Please enter a valid email address",
+      "passwordTooShort": "Password must be at least 8 characters",
+      "accountExists": "An account with this email already exists",
+      "accountNotFound": "No account found with this email"
+    }
+  },
+  "screening": {
+    "title": "Mental Health Screening",
+    "subtitle": "This screening will help us understand how you've been feeling",
+    "instructions": "Please answer each question based on how you have been feeling over the past two weeks.",
+    "startScreening": "Start Screening",
+    "questionProgress": "Question {{current}} of {{total}}",
+    "previousQuestion": "Previous Question",
+    "nextQuestion": "Next Question",
+    "playAudio": "Play Question Audio",
+    "pauseAudio": "Pause Audio",
+    "submitScreening": "Submit Screening",
+    "completing": "Completing screening...",
+    "progress": "Progress",
+    "keyboardHint": "Keyboard Shortcuts",
+    "selectAnswer": "Select Answer",
+    "instructions_detailed": {
+      "title": "Instructions",
+      "description": "Answer based on how you've felt in the past 2 weeks"
+    },
+    "keyboardHints": {
+      "title": "Keyboard Shortcuts",
+      "options": "Press 1-4 to select answers",
+      "next": "Press Enter or → to continue",
+      "previous": "Press ← to go back",
+      "audio": "Press Space to play/pause audio"
+    },
+    "questions": {
+      "phq9": {
+        "q1": "Little interest or pleasure in doing things",
+        "q2": "Feeling down, depressed, or hopeless",
+        "q3": "Trouble falling or staying asleep, or sleeping too much",
+        "q4": "Feeling tired or having little energy",
+        "q5": "Poor appetite or overeating",
+        "q6": "Feeling bad about yourself - or that you are a failure or have let yourself or your family down",
+        "q7": "Trouble concentrating on things, such as reading the newspaper or watching television",
+        "q8": "Moving or speaking so slowly that other people could have noticed. Or the opposite - being so fidgety or restless that you have been moving around a lot more than usual",
+        "q9": "Thoughts that you would be better off dead, or of hurting yourself"
+      },
+      "options": {
+        "notAtAll": "Not at all",
+        "severalDays": "Several days",
+        "moreThanHalf": "More than half the days",
+        "nearlyEvery": "Nearly every day"
+      }
+    },
+    "results": {
+      "title": "Your Screening Results",
+      "score": "Your Score: {{score}} out of {{total}}",
+      "severity": {
+        "minimal": "Minimal Depression",
+        "mild": "Mild Depression",
+        "moderate": "Moderate Depression",
+        "moderatelySevere": "Moderately Severe Depression",
+        "severe": "Severe Depression"
+      },
+      "recommendations": {
+        "title": "Recommendations",
+        "minimal": "Your results suggest minimal symptoms. Continue maintaining good mental health practices.",
+        "mild": "Your results suggest mild symptoms. Consider speaking with a mental health professional.",
+        "moderate": "Your results suggest moderate symptoms. We recommend professional support.",
+        "moderatelySevere": "Your results suggest moderately severe symptoms. Please seek professional help.",
+        "severe": "Your results suggest severe symptoms. Please seek immediate professional help."
+      },
+      "nextSteps": "Next Steps",
+      "bookAppointment": "Book an Appointment",
+      "chatSupport": "Get Chat Support",
+      "resources": "View Resources"
+    },
+    "errors": {
+      "loadingFailed": "Failed to load screening questions",
+      "submissionFailed": "Failed to submit screening results",
+      "audioFailed": "Failed to load audio"
+    }
+  },
+  "chat": {
+    "title": "AI Chat Support",
+    "subtitle": "Get instant support from our AI assistant",
+    "placeholder": "Type your message here...",
+    "send": "Send",
+    "typing": "AI is typing...",
+    "newConversation": "New Conversation",
+    "clearHistory": "Clear History",
+    "voiceInput": "Voice Input",
+    "stopRecording": "Stop Recording",
+    "listening": "Listening...",
+    "suggestions": {
+      "title": "Try asking about:",
+      "examples": [
+        "I'm feeling anxious lately",
+        "How can I improve my sleep?",
+        "What are some coping strategies?",
+        "I need help with stress management"
+      ]
+    },
+    "disclaimer": {
+      "title": "Important Disclaimer",
+      "text": "This AI assistant provides general information and support. It is not a substitute for professional medical advice, diagnosis, or treatment. If you're experiencing a mental health crisis, please contact emergency services or a mental health professional immediately."
+    },
+    "actions": {
+      "regenerate": "Regenerate Response",
+      "copy": "Copy Message",
+      "share": "Share Conversation",
+      "report": "Report Issue"
+    },
+    "status": {
+      "connecting": "Connecting...",
+      "connected": "Connected",
+      "disconnected": "Disconnected",
+      "error": "Connection Error"
+    },
+    "errors": {
+      "connectionFailed": "Failed to connect to chat service",
+      "messageFailed": "Failed to send message",
+      "loadHistoryFailed": "Failed to load chat history",
+      "voiceNotSupported": "Voice input is not supported in your browser"
+    }
+  },
+  "booking": {
+    "title": "Book an Appointment",
+    "subtitle": "Schedule a session with our mental health professionals",
+    "selectTherapist": "Select a Therapist",
+    "selectDate": "Select Date",
+    "selectTime": "Select Time",
+    "appointmentType": "Appointment Type",
+    "duration": "Duration",
+    "notes": "Additional Notes",
+    "notesPlaceholder": "Any specific concerns or topics you'd like to discuss...",
+    "bookAppointment": "Book Appointment",
+    "confirmBooking": "Confirm Booking",
+    "types": {
+      "consultation": "Initial Consultation",
+      "therapy": "Therapy Session",
+      "followup": "Follow-up Session",
+      "group": "Group Session"
+    },
+    "durations": {
+      "30": "30 minutes",
+      "45": "45 minutes",
+      "60": "60 minutes",
+      "90": "90 minutes"
+    },
+    "therapist": {
+      "available": "Available",
+      "busy": "Busy",
+      "offline": "Offline",
+      "rating": "Rating",
+      "experience": "Years Experience",
+      "specializations": "Specializations",
+      "languages": "Languages",
+      "nextAvailable": "Next Available"
+    },
+    "calendar": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "thisWeek": "This Week",
+      "nextWeek": "Next Week",
+      "noSlots": "No available slots",
+      "selectDate": "Select a date",
+      "availableSlots": "Available Slots"
+    },
+    "confirmation": {
+      "title": "Appointment Confirmed!",
+      "message": "Your appointment has been successfully booked. You will receive a confirmation email shortly.",
+      "details": "Appointment Details",
+      "therapist": "Therapist",
+      "date": "Date",
+      "time": "Time",
+      "type": "Type",
+      "duration": "Duration",
+      "location": "Location",
+      "online": "Online Session",
+      "inPerson": "In-Person",
+      "instructions": "What to Expect",
+      "reschedule": "Reschedule",
+      "cancel": "Cancel Appointment",
+      "addToCalendar": "Add to Calendar"
+    },
+    "errors": {
+      "loadTherapists": "Failed to load therapists",
+      "loadSlots": "Failed to load available time slots",
+      "bookingFailed": "Failed to book appointment",
+      "invalidSelection": "Please complete all required fields"
+    }
+  },
+  "forum": {
+    "title": "Community Forum",
+    "subtitle": "Connect with others, share experiences, and find support in our safe community space",
+    "anonymousNote": "All posts are anonymous to protect your privacy",
+    "newPost": "New Post",
+    "anonymous": "Anonymous",
+    "stats": {
+      "totalThreads": "{{count}} threads",
+      "page": "Page {{current}} of {{total}}"
+    },
+    "timeAgo": {
+      "justNow": "Just now",
+      "hoursAgo": "{{count}} hours ago",
+      "yesterday": "Yesterday"
+    },
+    "replies": "{{count}} replies",
+    "categories": {
+      "general": "General Discussion",
+      "depression": "Depression",
+      "anxiety": "Anxiety",
+      "stress": "Stress Management",
+      "relationships": "Relationships",
+      "academic": "Academic Pressure",
+      "family": "Family Issues",
+      "workplace": "Workplace Stress",
+      "self_help": "Self-Help",
+      "support": "Peer Support"
+    },
+    "loading": {
+      "threads": "Loading threads..."
+    },
+    "noThreads": {
+      "title": "No Discussions Yet",
+      "message": "Be the first to start a conversation in our community",
+      "createFirst": "Create First Post"
+    },
+    "createPost": {
+      "title": "Create New Post",
+      "category": "Category",
+      "selectCategory": "Select a category",
+      "titleLabel": "Title",
+      "titlePlaceholder": "What would you like to discuss?",
+      "contentLabel": "Content",
+      "contentPlaceholder": "Share your thoughts, experiences, or questions...",
+      "moderationNotice": "Your post will be reviewed by moderators before being published",
+      "submitting": "Submitting...",
+      "submit": "Submit Post"
+    },
+    "errors": {
+      "loadThreads": "Failed to load threads. Please try again.",
+      "emptyFields": "Please fill in all required fields.",
+      "postFailed": "Failed to create post. Please try again."
+    }
+  },
+  "moderator": {
+    "title": "Moderation Console",
+    "subtitle": "Review and moderate community posts",
+    "refresh": "Refresh",
+    "actionRequired": "Action Required",
+    "stats": {
+      "pending": "Pending Review",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "todayProcessed": "Processed Today",
+      "totalPendingPosts": "{{count}} pending posts",
+      "page": "Page {{current}} of {{total}}"
+    },
+    "actions": {
+      "approve": "Approve",
+      "reject": "Reject"
+    },
+    "loading": {
+      "posts": "Loading pending posts..."
+    },
+    "noPendingPosts": {
+      "title": "No Pending Posts",
+      "message": "All posts have been reviewed. Great job!"
+    },
+    "moderation": {
+      "approveTitle": "Approve Post",
+      "rejectTitle": "Reject Post",
+      "reasonLabel": "Moderation Reason",
+      "reasonPlaceholder": "Provide a reason for your decision...",
+      "processing": "Processing..."
+    },
+    "accessDenied": {
+      "title": "Access Denied",
+      "message": "You do not have permission to access the moderation console."
+    },
+    "errors": {
+      "accessDenied": "Access denied. You must be a moderator to view this page.",
+      "checkRole": "Unable to verify your role. Please try again.",
+      "loadPosts": "Failed to load pending posts. Please try again.",
+      "reasonRequired": "Please provide a reason for your decision.",
+      "moderationFailed": "Failed to process moderation decision. Please try again."
+    }
+  },
+  "adminDashboard": {
+    "title": "Admin Dashboard",
+    "subtitle": "Monitor system health and user analytics",
+    "refresh": "Refresh",
+    "export": "Export CSV",
+    "dateFilters": {
+      "last7days": "Last 7 days",
+      "last30days": "Last 30 days",
+      "last90days": "Last 90 days",
+      "lastYear": "Last year"
+    },
+    "stats": {
+      "totalUsers": "Total Users",
+      "totalScreenings": "Total Screenings",
+      "averageScore": "Average Score",
+      "completionRate": "Completion Rate",
+      "registeredUsers": "Registered users",
+      "phqAssessments": "PHQ-9 assessments",
+      "phqAverage": "PHQ-9 average",
+      "assessmentCompletion": "Assessment completion"
+    },
+    "charts": {
+      "severityDistribution": "PHQ-9 Severity Distribution",
+      "dailyTrend": "Daily Screenings Trend",
+      "started": "Started",
+      "completed": "Completed"
+    },
+    "urgentAlerts": {
+      "title": "Urgent/Crisis Alerts",
+      "subtitle": "High-priority screenings requiring immediate attention",
+      "columns": {
+        "userId": "User ID",
+        "score": "Score",
+        "severity": "Severity",
+        "created": "Created",
+        "timeToResponse": "Time to Response",
+        "status": "Status"
+      },
+      "noAlerts": "No urgent alerts",
+      "allAddressed": "All high-priority cases have been addressed",
+      "pending": "Pending"
+    },
+    "severity": {
+      "minimal": "None-Minimal (0-4)",
+      "mild": "Mild (5-9)",
+      "moderate": "Moderate (10-14)",
+      "moderatelySevere": "Moderately Severe (15-19)",
+      "severe": "Severe (20-27)"
+    },
+    "loading": "Loading dashboard data...",
+    "errors": {
+      "loadFailed": "Failed to load dashboard data. Please try again."
+    }
+  },
+  "language": {
+    "switcher": {
+      "title": "Language",
+      "current": "Current Language",
+      "select": "Select Language",
+      "change": "Change Language"
+    },
+    "names": {
+      "en": "English",
+      "hi": "हिंदी"
+    }
+  }
+}
