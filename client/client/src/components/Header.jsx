@@ -94,25 +94,24 @@ const Header = () => {
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                     <button
-                      className="w-full flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100"
+                      className="flex items-center px-4 py-2 w-full text-left text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                       onClick={() => {
                         setIsDropdownOpen(false)
-                        navigate('/about')
+                        navigate('/dashboard')
                       }}
                     >
-                      <FiHelpCircle className="mr-2" /> <span>{t('nav.about')}</span>
+                      <FiUser className="mr-2" />
+                      <span>Dashboard</span>
                     </button>
-                    <div className="px-4 py-2 hover:bg-gray-50">
-                      <LanguageSwitcher />
-                    </div>
                     <button
-                      className="w-full flex items-center px-4 py-2 text-red-600 hover:bg-red-50"
+                      className="flex items-center px-4 py-2 w-full text-left text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                       onClick={() => {
-                        logout()
                         setIsDropdownOpen(false)
+                        logout()
                       }}
                     >
-                      <FiLogIn className="mr-2" /> <span>{t('auth.logout')}</span>
+                      <FiLogIn className="mr-2" />
+                      <span>{t('auth.logout')}</span>
                     </button>
                   </div>
                 )}
@@ -160,16 +159,18 @@ const Header = () => {
                 <span>{item.label}</span>
               </Link>
             ))}
-            <button
-              className="flex items-center px-4 py-3 w-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
-              onClick={() => {
-                setIsMenuOpen(false)
-                navigate('/about')
-              }}
-            >
-              <FiHelpCircle className="mr-2" />
-              <span>{t('nav.about')}</span>
-            </button>
+            {!isAuthenticated && (
+              <button
+                className="flex items-center px-4 py-3 w-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+                onClick={() => {
+                  setIsMenuOpen(false)
+                  navigate('/about')
+                }}
+              >
+                <FiHelpCircle className="mr-2" />
+                <span>{t('nav.about')}</span>
+              </button>
+            )}
             <div className="px-4 py-2">
               <LanguageSwitcher />
             </div>

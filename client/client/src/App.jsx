@@ -16,6 +16,9 @@ import AdminDashboard from './pages/AdminDashboard'
 import NotFound from './pages/NotFound'
 import About from './pages/About'
 import Resources from './pages/Resources'
+import Footer from './components/Footer'
+import StudentDashboard from './components/dashboards/StudentDashboard'
+
 function App() {
   const { t } = useTranslation()
 
@@ -34,6 +37,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/screening" element={<Screening />} />
+                <Route path='/dashboard' element = {<StudentDashboard/>}/>
                 <Route path="/chat" element={<Chat />} />
                 <Route path="/booking" element={<Booking />} />
                 <Route path="/forum" element={<ErrorBoundary><Forum /></ErrorBoundary>} />
@@ -45,6 +49,7 @@ function App() {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
+            <Footer />
           </>
         } />
       </Routes>
