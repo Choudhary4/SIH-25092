@@ -132,6 +132,22 @@ const Chat = () => {
       const transcript = event.results[0][0].transcript
       setInputMessage(transcript)
       setIsListening(false)
+
+      // send transcript to voice_agent REST
+      fetch("http://localhost:8000/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: transcript,
+          session_id: "user123"   // or any unique per-user ID
+        })
+      }    )
+      .then(res => res.blob())
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        new Audio(url).play();
+      })
+      .catch(console.error);
     }
     
     recognition.onerror = () => {
