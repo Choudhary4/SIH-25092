@@ -42,7 +42,7 @@ const Admin = () => {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600">Monitor and manage the MindCare platform</p>
+          <p className="text-gray-600">Monitor and manage the Mann-Mitra platform</p>
         </div>
         <div className="flex space-x-4">
           <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">

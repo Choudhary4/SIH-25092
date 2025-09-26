@@ -1,10 +1,10 @@
-# MindCare Platform - Localization Guide
+# Mann-Mitra Platform - Localization Guide
 
-This document provides comprehensive information about the internationalization (i18n) setup for the MindCare Platform.
+This document provides comprehensive information about the internationalization (i18n) setup for the Mann-Mitra Platform.
 
 ## 🌍 Overview
 
-The MindCare Platform supports multiple languages to serve a diverse user base. Currently implemented languages:
+The Mann-Mitra Platform supports multiple languages to serve a diverse user base. Currently implemented languages:
 
 - **English (en)** - Default language
 - **Hindi (hi)** - हिंदी भाषा समर्थन

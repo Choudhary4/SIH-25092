@@ -88,8 +88,8 @@ const authReducer = (state, action) => {
 const AuthContext = createContext(null)
 
 // Storage utilities
-const TOKEN_KEY = 'mindcare_token'
-const USER_KEY = 'mindcare_user'
+const TOKEN_KEY = 'Mann-Mitra_token'
+const USER_KEY = 'Mann-Mitra_user'
 
 const storage = {
   getToken: () => {

@@ -1,8 +1,8 @@
-# PWA Implementation Guide - MindCare Platform
+# PWA Implementation Guide - Mann-Mitra Platform
 
 ## Overview
 
-This guide explains the complete PWA (Progressive Web App) implementation for the MindCare mental health platform, including offline caching, service workers, and installation prompts.
+This guide explains the complete PWA (Progressive Web App) implementation for the Mann-Mitra mental health platform, including offline caching, service workers, and installation prompts.
 
 ## 🏗️ Architecture Overview
 
@@ -51,7 +51,7 @@ export default defineConfig({
         runtimeCaching: [
           // API caching (network-first)
           {
-            urlPattern: /^https:\/\/api\.mindcare\.com\/.*$/,
+            urlPattern: /^https:\/\/api\.Mann-Mitra\.com\/.*$/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
@@ -183,8 +183,8 @@ The PWA manifest includes:
 
 ```json
 {
-  "name": "MindCare - Mental Health Support",
-  "short_name": "MindCare",
+  "name": "Mann-Mitra - Mental Health Support",
+  "short_name": "Mann-Mitra",
   "theme_color": "#3B82F6",
   "background_color": "#FFFFFF",
   "display": "standalone",

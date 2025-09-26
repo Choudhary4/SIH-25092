@@ -33,7 +33,7 @@ const resources = {
       },
       // Home page
       home: {
-        welcome: 'Welcome to MindCare Platform',
+        welcome: 'Welcome to Mann-Mitra Platform',
         subtitle: 'Your journey to better mental health starts here',
         getStarted: 'Get Started',
         features: {
@@ -425,7 +425,7 @@ const resources = {
       },
       // Home page
       home: {
-        welcome: 'MindCare प्लेटफॉर्म में आपका स्वागत है',
+        welcome: 'Mann-Mitra प्लेटफॉर्म में आपका स्वागत है',
         subtitle: 'बेहतर मानसिक स्वास्थ्य की आपकी यात्रा यहां से शुरू होती है',
         getStarted: 'शुरू करें',
         features: {

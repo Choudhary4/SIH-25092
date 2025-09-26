@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
-const TOKEN_KEY = 'mindcare_token'
+const TOKEN_KEY = 'Mann-Mitra_token'
 
 // Create axios instance
 const api = axios.create({

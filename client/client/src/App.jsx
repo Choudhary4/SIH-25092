@@ -12,7 +12,8 @@ import Moderator from './pages/Moderator'
 import Admin from './pages/Admin'
 import AdminDashboard from './pages/AdminDashboard'
 import NotFound from './pages/NotFound'
-
+import About from './pages/About'
+import Resources from './pages/Resources'
 function App() {
   const { t } = useTranslation()
 
@@ -37,6 +38,8 @@ function App() {
                 <Route path="/moderator" element={<Moderator />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route path='/about' element={<About />} />
+                <Route path='/resources' element = {<Resources/>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>

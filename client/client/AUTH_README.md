@@ -2,7 +2,7 @@
 
 ## Overview
 
-This MindCare frontend application includes a comprehensive authentication system with token management, API client integration, and secure storage utilities.
+This Mann-Mitra frontend application includes a comprehensive authentication system with token management, API client integration, and secure storage utilities.
 
 ## Components
 
@@ -131,7 +131,7 @@ Create a `.env` file in the client directory:
 
 ```env
 VITE_API_URL=http://localhost:5000/api
-VITE_APP_NAME=MindCare
+VITE_APP_NAME=Mann-Mitra
 VITE_NODE_ENV=development
 ```
 

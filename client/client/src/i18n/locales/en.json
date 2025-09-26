@@ -6,7 +6,12 @@
     "booking": "Book Appointment",
     "forum": "Community Forum",
     "admin": "Admin Dashboard",
-    "moderator": "Moderator"
+    "moderator": "Moderator",
+    "buddy": "Buddy",
+    "resources": "Resources",
+    "counsellorTalk": "Counsellor Talk",
+    "peerTalk": "Peer Talk",
+    "about": "About"
   },
   "common": {
     "loading": "Loading...",
@@ -62,7 +67,7 @@
     "submitted": "Successfully submitted!"
   },
   "home": {
-    "welcome": "Welcome to MindCare Platform",
+    "welcome": "Welcome to Mann-Mitra Platform",
     "subtitle": "Your journey to better mental health starts here",
     "getStarted": "Get Started",
     "features": {

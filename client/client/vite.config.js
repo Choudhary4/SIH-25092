@@ -144,8 +144,8 @@ export default defineConfig({
       
       // Manifest configuration
       manifest: {
-        name: 'MindCare - Mental Health Platform',
-        short_name: 'MindCare',
+        name: 'Mann-Mitra - Mental Health Platform',
+        short_name: 'Mann-Mitra',
         description: 'Comprehensive mental health support platform with AI assistance, professional booking, and community forum',
         theme_color: '#4F46E5',
         background_color: '#F8FAFC',

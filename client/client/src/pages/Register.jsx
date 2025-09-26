@@ -132,7 +132,7 @@ const Register = () => {
             <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
               <span className="text-white font-bold text-xl">M</span>
             </div>
-            <span className="text-3xl font-bold text-gray-900">MindCare</span>
+            <span className="text-3xl font-bold text-gray-900">Mann-Mitra</span>
           </Link>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
             {t('auth.signup')}
