@@ -3,24 +3,24 @@ import { Link } from 'react-router-dom'
 const About = () => {
   const features = [
     {
-      title: "Anonymous & Safe",
-      description: "Your privacy is our priority. Use all features without revealing your identity.",
-      icon: "🔒"
+      title: "Stress-Free Access",
+      description: "No lengthy forms or complex procedures. Access support with just a few clicks.",
+      icon: "✨"
     },
     {
-      title: "Culturally Aware",
-      description: "Built understanding Indian student culture, family dynamics, and academic pressures.",
-      icon: "🇮🇳"
+      title: "Stigma-Free Environment",  
+      description: "Anonymous registration and interactions ensure complete privacy and comfort.",
+      icon: "🤝"
     },
     {
-      title: "24/7 Available",
-      description: "Get support whenever you need it - during exams, late nights, or weekends.",
-      icon: "⏰"
+      title: "Comprehensive Support",
+      description: "From AI chatbot to professional counsellors, peer support, and curated resources.",
+      icon: "🌟"
     },
     {
-      title: "Professional Backup",
-      description: "AI support backed by real counselors when you need human intervention.",
-      icon: "👥"
+      title: "Regional Language Support",
+      description: "Communicate in your preferred language for better understanding and comfort.",
+      icon: "�️"
     }
   ]
 
@@ -55,15 +55,16 @@ const About = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 to-emerald-50 py-16">
+      <section className="bg-gradient-to-br from-teal-50 to-blue-50 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent mb-6">
             About Mann-Mitra
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            We're building India's most trusted mental health platform for students. 
-            Born from the understanding that student mental health needs are unique, 
-            urgent, and often unaddressed.
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-4">
+            Digital psychological support for students - Your trusted companion for mental wellness
+          </p>
+          <p className="text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">
+            We provide stress-free, stigma-free, and accessible mental health solutions designed specifically for students.
           </p>
         </div>
       </section>
@@ -75,11 +76,13 @@ const About = () => {
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-6">Our Mission</h2>
               <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-                Every student deserves access to mental health support without barriers, 
-                stigma, or judgment. We're creating a space where seeking help is as 
-                normal as asking for academic help.
+                To break down barriers to mental health support for students by providing comprehensive, 
+                accessible, and stigma-free psychological assistance through technology and human connection.
               </p>
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+                We believe every student should have access to mental health resources without fear of judgment, 
+                financial constraints, or social stigma. Our platform connects students with AI-powered support, 
+                professional counsellors, trained peers, and curated resources in their preferred language.
                 Our platform combines AI-powered immediate support with human expertise, 
                 peer connections, and culturally sensitive resources designed specifically 
                 for the Indian student experience.

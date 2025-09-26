@@ -17,20 +17,31 @@ const Forum = () => {
   const [newPost, setNewPost] = useState({
     title: '',
     content: '',
-    category: ''
+    category: '',
+    isAnonymous: true
   });
   const [submittingPost, setSubmittingPost] = useState(false);
+  const [selectedThread, setSelectedThread] = useState(null);
+  const [replyContent, setReplyContent] = useState('');
   const [categories] = useState([
     'general',
-    'depression',
-    'anxiety',
-    'stress',
+    'academic_stress',
+    'anxiety_depression', 
     'relationships',
-    'academic',
-    'family',
-    'workplace',
-    'self_help',
-    'support'
+    'family_issues',
+    'peer_pressure',
+    'self_esteem',
+    'study_motivation',
+    'career_confusion',
+    'social_anxiety'
+  ]);
+
+  // Mock data for trained peer volunteers
+  const [trainedPeers] = useState([
+    { id: 1, name: 'Anonymous Peer 1', specialization: 'Anxiety Support', verified: true, responses: 45 },
+    { id: 2, name: 'Anonymous Peer 2', specialization: 'Academic Stress', verified: true, responses: 32 },
+    { id: 3, name: 'Anonymous Peer 3', specialization: 'Depression Support', verified: true, responses: 28 },
+    { id: 4, name: 'Anonymous Peer 4', specialization: 'Social Issues', verified: true, responses: 51 }
   ]);
 
   // Load threads on component mount and page change
@@ -55,10 +66,47 @@ const Forum = () => {
     }
   };
 
+  // Content filtering function
+  const filterContent = (content) => {
+    const offensiveWords = ['abuse', 'hate', 'violence', 'harm', 'suicide', 'kill'];
+    const triggeringWords = ['worthless', 'hopeless', 'ending it all'];
+    
+    const lowerContent = content.toLowerCase();
+    
+    for (const word of offensiveWords) {
+      if (lowerContent.includes(word)) {
+        return { blocked: true, reason: 'Contains potentially harmful language' };
+      }
+    }
+    
+    for (const word of triggeringWords) {
+      if (lowerContent.includes(word)) {
+        return { blocked: true, reason: 'Contains triggering content - redirecting to counselor' };
+      }
+    }
+    
+    return { blocked: false };
+  };
+
   const handleNewPost = async (e) => {
     e.preventDefault();
     if (!newPost.title.trim() || !newPost.content.trim()) {
-      setError(t('forum.errors.emptyFields'));
+      setError('Please fill in all fields');
+      return;
+    }
+
+    // Check content filter
+    const titleFilter = filterContent(newPost.title);
+    const contentFilter = filterContent(newPost.content);
+    
+    if (titleFilter.blocked || contentFilter.blocked) {
+      setError(`Post blocked: ${titleFilter.reason || contentFilter.reason}`);
+      if (titleFilter.reason?.includes('counselor') || contentFilter.reason?.includes('counselor')) {
+        // Suggest counselor booking
+        setTimeout(() => {
+          window.location.href = '/booking';
+        }, 3000);
+      }
       return;
     }
 
@@ -70,19 +118,16 @@ const Forum = () => {
         title: newPost.title.trim(),
         content: newPost.content.trim(),
         category: newPost.category || 'general',
-        isAnonymous: true // Always post as anonymous
+        isAnonymous: newPost.isAnonymous
       };
 
       const response = await api.post('/v1/forum/threads', postData);
       setShowNewPostModal(false);
-      setNewPost({ title: '', content: '', category: '' });
-      // Show success message
-      setError(null);
-      // Optionally refresh threads if the new post is immediately published
-      // fetchThreads();
+      setNewPost({ title: '', content: '', category: '', isAnonymous: true });
+      fetchThreads(); // Refresh threads
     } catch (err) {
       console.error('Error creating post:', err);
-      setError(t('forum.errors.postFailed'));
+      setError('Failed to create post. Please try again.');
     } finally {
       setSubmittingPost(false);
     }
@@ -107,15 +152,15 @@ const Forum = () => {
   const getCategoryColor = (category) => {
     const colors = {
       general: 'bg-gray-100 text-gray-800',
-      depression: 'bg-blue-100 text-blue-800',
-      anxiety: 'bg-yellow-100 text-yellow-800',
-      stress: 'bg-red-100 text-red-800',
+      academic_stress: 'bg-purple-100 text-purple-800',
+      anxiety_depression: 'bg-blue-100 text-blue-800',
       relationships: 'bg-pink-100 text-pink-800',
-      academic: 'bg-purple-100 text-purple-800',
-      family: 'bg-green-100 text-green-800',
-      workplace: 'bg-indigo-100 text-indigo-800',
-      self_help: 'bg-teal-100 text-teal-800',
-      support: 'bg-orange-100 text-orange-800'
+      family_issues: 'bg-green-100 text-green-800',
+      peer_pressure: 'bg-orange-100 text-orange-800',
+      self_esteem: 'bg-teal-100 text-teal-800',
+      study_motivation: 'bg-indigo-100 text-indigo-800',
+      career_confusion: 'bg-yellow-100 text-yellow-800',
+      social_anxiety: 'bg-red-100 text-red-800'
     };
     return colors[category] || colors.general;
   };
@@ -126,13 +171,39 @@ const Forum = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('forum.title')}</h1>
-          <p className="text-lg text-gray-600">{t('forum.subtitle')}</p>
-          <p className="text-sm text-gray-500 mt-2">{t('forum.anonymousNote')}</p>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+            Peer Talk
+          </h1>
+          <p className="text-lg text-gray-600 mb-2">
+            Anonymous peer-to-peer discussion board where trained students provide guidance and support
+          </p>
+          <p className="text-sm text-gray-500">
+            🔒 All posts are anonymous • 🛡️ Content is moderated • 👥 Trained peer volunteers respond
+          </p>
+        </div>
+
+        {/* Trained Peers Section */}
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 mb-8 border border-green-200">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+            <span className="mr-2">👨‍🎓</span>
+            Our Trained Peer Volunteers
+          </h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {trainedPeers.map(peer => (
+              <div key={peer.id} className="bg-white rounded-lg p-4 border border-green-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-gray-900">{peer.name}</span>
+                  {peer.verified && <span className="text-green-600">✓</span>}
+                </div>
+                <p className="text-sm text-gray-600 mb-2">{peer.specialization}</p>
+                <p className="text-xs text-gray-500">{peer.responses} helpful responses</p>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Stats and New Post Button */}
@@ -332,51 +403,78 @@ const Forum = () => {
                   </div>
 
                   <form onSubmit={handleNewPost} className="space-y-4">
+                    {/* Anonymous Posting Notice */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center">
+                        <span className="text-blue-600 mr-2">🔒</span>
+                        <div>
+                          <p className="text-sm font-medium text-blue-900">Anonymous Posting</p>
+                          <p className="text-xs text-blue-700">Your identity is protected. Only trained peer volunteers and moderators can respond.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Content Filter Warning */}
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <div className="flex items-center">
+                        <span className="text-yellow-600 mr-2">🛡️</span>
+                        <div>
+                          <p className="text-sm font-medium text-yellow-900">Content Guidelines</p>
+                          <p className="text-xs text-yellow-700">Posts are automatically filtered for harmful content. Triggering content will be redirected to professional support.</p>
+                        </div>
+                      </div>
+                    </div>
+
                     <div>
                       <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                        {t('forum.newPost.category')}
+                        Category
                       </label>
                       <select
                         id="category"
                         value={newPost.category}
                         onChange={(e) => setNewPost({ ...newPost, category: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                       >
-                        <option value="">{t('forum.newPost.selectCategory')}</option>
-                        {categories.map((category) => (
-                          <option key={category} value={category}>
-                            {t(`forum.categories.${category}`)}
-                          </option>
-                        ))}
+                        <option value="">Select a category</option>
+                        <option value="general">General Support</option>
+                        <option value="academic_stress">Academic Stress</option>
+                        <option value="anxiety_depression">Anxiety & Depression</option>
+                        <option value="relationships">Relationships</option>
+                        <option value="family_issues">Family Issues</option>
+                        <option value="peer_pressure">Peer Pressure</option>
+                        <option value="self_esteem">Self Esteem</option>
+                        <option value="study_motivation">Study Motivation</option>
+                        <option value="career_confusion">Career Confusion</option>
+                        <option value="social_anxiety">Social Anxiety</option>
                       </select>
                     </div>
 
                     <div>
                       <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-                        {t('forum.newPost.titleLabel')}
+                        Title
                       </label>
                       <input
                         type="text"
                         id="title"
                         value={newPost.title}
                         onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        placeholder={t('forum.newPost.titlePlaceholder')}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Briefly describe your situation..."
                         required
                       />
                     </div>
 
                     <div>
                       <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-                        {t('forum.newPost.contentLabel')}
+                        Your Message
                       </label>
                       <textarea
                         id="content"
                         rows={6}
                         value={newPost.content}
                         onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 resize-none"
-                        placeholder={t('forum.newPost.contentPlaceholder')}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 resize-none"
+                        placeholder="Share what you're going through. Our trained peer volunteers are here to help..."
                         required
                       />
                     </div>

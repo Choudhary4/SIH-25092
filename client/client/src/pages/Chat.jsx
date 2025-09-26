@@ -6,6 +6,10 @@ import CrisisModal from '../components/CrisisModal'
 
 const Chat = () => {
   const { t } = useTranslation()
+  const [isVoiceMode, setIsVoiceMode] = useState(false)
+  const [isListening, setIsListening] = useState(false)
+  const [severityLevel, setSeverityLevel] = useState(null)
+  const [showCounsellorSuggestion, setShowCounsellorSuggestion] = useState(false)
   const { post } = useApi()
   const [messages, setMessages] = useState([])
   const [inputMessage, setInputMessage] = useState('')
@@ -98,13 +102,83 @@ const Chat = () => {
   useEffect(() => {
     const welcomeMessage = {
       id: 'welcome',
-      text: t('chat.welcomeMessage'),
+      text: 'Hi! I\'m Buddy, your mental health companion. I\'m here to listen and support you. You can chat with me or use voice input. How are you feeling today?',
       sender: 'bot',
       timestamp: new Date(),
-      suggestedActions: ['breathing_exercise', 'grounding_technique']
+      suggestedActions: ['feeling_good', 'feeling_stressed', 'feeling_anxious', 'voice_mode']
     }
     setMessages([welcomeMessage])
   }, [t])
+
+  // Voice recognition setup
+  const startVoiceRecognition = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert('Voice recognition is not supported in your browser. Please use Chrome or Safari.')
+      return
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    const recognition = new SpeechRecognition()
+    
+    recognition.continuous = false
+    recognition.interimResults = false
+    recognition.lang = 'en-US' // Can be changed based on user preference
+    
+    recognition.onstart = () => {
+      setIsListening(true)
+    }
+    
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript
+      setInputMessage(transcript)
+      setIsListening(false)
+    }
+    
+    recognition.onerror = () => {
+      setIsListening(false)
+    }
+    
+    recognition.onend = () => {
+      setIsListening(false)
+    }
+    
+    recognition.start()
+  }
+
+  // Severity assessment function
+  const assessSeverity = (message) => {
+    const severityKeywords = {
+      high: ['suicide', 'kill myself', 'end it all', 'no point', 'worthless', 'hopeless'],
+      medium: ['depressed', 'anxious', 'panic', 'stressed', 'overwhelmed', 'can\'t cope'],
+      low: ['tired', 'worried', 'sad', 'confused', 'uncertain']
+    }
+
+    const messageText = message.toLowerCase()
+    
+    for (const keyword of severityKeywords.high) {
+      if (messageText.includes(keyword)) {
+        setSeverityLevel('high')
+        setShowCounsellorSuggestion(true)
+        return 'high'
+      }
+    }
+    
+    for (const keyword of severityKeywords.medium) {
+      if (messageText.includes(keyword)) {
+        setSeverityLevel('medium')
+        return 'medium'
+      }
+    }
+    
+    for (const keyword of severityKeywords.low) {
+      if (messageText.includes(keyword)) {
+        setSeverityLevel('low')
+        return 'low'
+      }
+    }
+    
+    return 'normal'
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -121,20 +195,26 @@ const Chat = () => {
     }
 
     setMessages(prev => [...prev, userMessage])
+    const messageText = inputMessage.trim()
     setInputMessage('')
     setIsSending(true)
+
+    // Assess severity before sending
+    const severity = assessSeverity(messageText)
 
     try {
       // Send via both API and Socket.io
       const apiPromise = post('/api/v1/chat/message', {
-        message: inputMessage.trim(),
+        message: messageText,
+        severity: severity,
         timestamp: new Date().toISOString()
       })
 
       // Emit socket event for real-time response
       if (socketRef.current?.connected) {
         socketRef.current.emit('user_message', {
-          message: inputMessage.trim(),
+          message: messageText,
+          severity: severity,
           timestamp: new Date().toISOString()
         })
       }
@@ -183,6 +263,21 @@ const Chat = () => {
 
   const handleSuggestedAction = (action) => {
     switch (action) {
+      case 'feeling_good':
+        setInputMessage("I'm feeling good today!")
+        setTimeout(() => sendMessage(), 100)
+        break
+      case 'feeling_stressed':
+        setInputMessage("I'm feeling stressed and need some help.")
+        setTimeout(() => sendMessage(), 100)
+        break
+      case 'feeling_anxious':
+        setInputMessage("I'm feeling anxious and worried.")
+        setTimeout(() => sendMessage(), 100)
+        break
+      case 'voice_mode':
+        setIsVoiceMode(!isVoiceMode)
+        break
       case 'breathing_exercise':
         startBreathingExercise()
         break
@@ -192,9 +287,12 @@ const Chat = () => {
       case 'crisis_escalation':
         setCrisisModal({ isOpen: true, type: 'immediate' })
         break
+      case 'book_counsellor':
+        window.location.href = '/booking'
+        break
       default:
         // Send action as message
-        setInputMessage(t(`chat.actions.${action}`))
+        setInputMessage(action)
         setTimeout(() => sendMessage(), 100)
     }
   }
@@ -343,33 +441,63 @@ const Chat = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-teal-50 to-blue-100">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mr-3">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
+            <div className="w-12 h-12 bg-gradient-to-r from-teal-600 to-blue-600 rounded-full flex items-center justify-center mr-3">
+              <span className="text-white font-bold text-lg">🤖</span>
             </div>
             <div>
               <h1 className="text-xl font-semibold text-gray-900">
-                {t('chat.title')}
+                Buddy - Your Mental Health Companion
               </h1>
               <div className="flex items-center text-sm text-gray-500">
                 <div className={`w-2 h-2 rounded-full mr-2 ${
                   isConnected ? 'bg-green-400' : 'bg-red-400'
                 }`} />
-                {isConnected ? t('chat.online') : t('chat.offline')}
+                {isConnected ? 'Online' : 'Offline'} • {severityLevel && `Severity: ${severityLevel}`}
               </div>
             </div>
           </div>
 
-          <div className="text-sm text-gray-500">
-            {t('chat.aiFirstAid')}
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setIsVoiceMode(!isVoiceMode)}
+              className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                isVoiceMode
+                  ? 'bg-teal-100 text-teal-700 border border-teal-200'
+                  : 'bg-gray-100 text-gray-700 border border-gray-200'
+              }`}
+            >
+              {isVoiceMode ? '🎤 Voice Mode' : '💬 Text Mode'}
+            </button>
+            <div className="text-sm text-gray-500">
+              AI/Voice Support • Regional Languages
+            </div>
           </div>
         </div>
+
+        {/* Severity Warning */}
+        {showCounsellorSuggestion && (
+          <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <span className="text-orange-600 mr-2">⚠️</span>
+                <span className="text-orange-800 font-medium">
+                  I notice you might be going through a tough time. Would you like to connect with a professional counsellor?
+                </span>
+              </div>
+              <button
+                onClick={() => handleSuggestedAction('book_counsellor')}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+              >
+                Book Counsellor
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Messages Container */}
@@ -414,23 +542,49 @@ const Chat = () => {
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyDown={handleKeyPress}
-                placeholder={t('chat.inputPlaceholder')}
-                className="w-full px-4 py-3 border border-gray-300 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder={isVoiceMode ? "Click the mic button to speak..." : "Type your message here..."}
+                className="w-full px-4 py-3 border border-gray-300 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                 rows="1"
                 style={{ maxHeight: '120px' }}
-                disabled={!isConnected}
-                aria-label={t('chat.inputLabel')}
+                disabled={!isConnected || (isVoiceMode && !inputMessage)}
+                aria-label="Type your message"
               />
             </div>
+            
+            {/* Voice Input Button */}
+            {isVoiceMode && (
+              <button
+                onClick={startVoiceRecognition}
+                disabled={isListening}
+                className={`p-3 rounded-full transition-all duration-200 ${
+                  isListening
+                    ? 'bg-red-500 text-white animate-pulse'
+                    : 'bg-teal-500 text-white hover:bg-teal-600 shadow-lg hover:shadow-xl transform hover:scale-105'
+                }`}
+                aria-label="Voice input"
+              >
+                {isListening ? (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                  </svg>
+                )}
+              </button>
+            )}
+
             <button
               onClick={sendMessage}
               disabled={!inputMessage.trim() || isSending || !isConnected}
               className={`p-3 rounded-full transition-all duration-200 ${
                 inputMessage.trim() && !isSending && isConnected
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transform hover:scale-105'
+                  ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white hover:from-teal-700 hover:to-blue-700 shadow-lg hover:shadow-xl transform hover:scale-105'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
-              aria-label={t('chat.sendMessage')}
+              aria-label="Send message"
             >
               {isSending ? (
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>

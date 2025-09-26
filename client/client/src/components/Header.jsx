@@ -8,28 +8,28 @@ import LanguageSwitcher from './common/LanguageSwitcher'
 const navItems = [
   {
     path: '/chat',
-    labelKey: 'nav.buddy',
+    label: 'Buddy',
     icon: <FiMessageSquare />
   },
   {
-    path: '/resources',
-    labelKey: 'nav.resources',
-    icon: <FiBookOpen />
-  },
-  {
     path: '/booking',
-    labelKey: 'nav.counsellorTalk',
+    label: 'Counsellor Talk',
     icon: <FiHelpCircle />
   },
   {
     path: '/forum',
-    labelKey: 'nav.peerTalk',
+    label: 'Peer Talk',
     icon: <FiUsers />
   },
   {
+    path: '/resources',
+    label: 'Resource Hub',
+    icon: <FiBookOpen />
+  },
+  {
     path: '/about',
-    labelKey: 'nav.about',
-    icon: <FiHelpCircle />
+    label: 'About',
+    icon: <FiGlobe />
   }
 ]
 
@@ -51,9 +51,12 @@ const Header = () => {
 
           {/* Logo as Home Link */}
           <Link to="/" className="flex items-center space-x-3 flex-shrink-0">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg cursor-pointer">
-              <span className="text-white font-bold text-lg select-none">M</span>
+            <div className="w-10 h-10 bg-gradient-to-r from-teal-600 to-blue-600 rounded-xl flex items-center justify-center shadow-lg cursor-pointer">
+              <span className="text-white font-bold text-lg select-none">MM</span>
             </div>
+            <span className="text-xl font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent hidden sm:block">
+              Mann-Mitra
+            </span>
           </Link>
 
           {/* Navbar links */}
@@ -64,12 +67,12 @@ const Header = () => {
                 to={item.path}
                 className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
                   ${isActivePath(item.path)
-                    ? 'bg-blue-100 text-blue-700 shadow-sm'
+                    ? 'bg-teal-100 text-teal-700 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}
                   `}
               >
                 {item.icon}
-                <span className="hidden sm:inline">{t(item.labelKey)}</span>
+                <span className="hidden sm:inline">{item.label}</span>
               </Link>
             ))}
           </nav>
@@ -149,12 +152,12 @@ const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
                 className={`flex items-center space-x-2 px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 ${
                   isActivePath(item.path)
-                    ? 'bg-blue-100 text-blue-700 shadow-sm'
+                    ? 'bg-teal-100 text-teal-700 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                 }`}
               >
                 {item.icon}
-                <span>{t(item.labelKey)}</span>
+                <span>{item.label}</span>
               </Link>
             ))}
             <button

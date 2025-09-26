@@ -6,59 +6,73 @@ const Home = () => {
 
   const features = [
     {
-      key: 'screening',
-      title: t('home.features.screening'),
-      description: 'Take a comprehensive mental health assessment to understand your current state',
-      icon: '🧠',
-      path: '/screening',
+      key: 'buddy',
+      title: 'Buddy',
+      description: 'AI/Voice-based chatbot for mental health support with regional language support. Get instant guidance and severity assessment.',
+      icon: '�',
+      path: '/chat',
+      color: 'bg-gradient-to-br from-teal-50 to-teal-100 border-teal-200 hover:from-teal-100 hover:to-teal-200'
+    },
+    {
+      key: 'counsellor',
+      title: 'Counsellor Talk',
+      description: 'Book online chat, video call, or offline sessions with professional counsellors. Confidential and secure.',
+      icon: '�‍⚕️',
+      path: '/booking',
       color: 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 hover:from-blue-100 hover:to-blue-200'
     },
     {
-      key: 'chat',
-      title: t('home.features.chat'),
-      description: 'Get instant support from our AI-powered mental health assistant',
-      icon: '💬',
-      path: '/chat',
+      key: 'peer',
+      title: 'Peer Talk',
+      description: 'Anonymous peer-to-peer discussion board where trained students provide guidance and support.',
+      icon: '�',
+      path: '/forum',
       color: 'bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:from-green-100 hover:to-green-200'
     },
     {
-      key: 'booking',
-      title: t('home.features.booking'),
-      description: 'Schedule appointments with licensed mental health professionals',
-      icon: '📅',
-      path: '/booking',
+      key: 'resources',
+      title: 'Resource Hub',
+      description: 'Videos, relaxation audios, guides, and courses with certification options. Curated content in multiple languages.',
+      icon: '�',
+      path: '/resources',
       color: 'bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 hover:from-purple-100 hover:to-purple-200'
-    },
-    {
-      key: 'forum',
-      title: t('home.features.forum'),
-      description: 'Connect with others and share experiences in a supportive community',
-      icon: '👥',
-      path: '/forum',
-      color: 'bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 hover:from-orange-100 hover:to-orange-200'
     }
   ]
 
   return (
     <div className="space-y-16">
       {/* Hero Section */}
-      <section className="text-center py-16 bg-gradient-to-br from-blue-50 via-white to-purple-50 rounded-2xl">
+      <section className="text-center py-16 bg-gradient-to-br from-teal-50 via-white to-blue-50 rounded-2xl">
         <div className="max-w-4xl mx-auto px-6">
-          <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-6">
-            {t('home.welcome')}
+          <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent mb-6">
+            Mann-Mitra
           </h1>
-          <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed">
-            {t('home.subtitle')}
+          <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+            Digital psychological support for students - Stress-free, stigma-free, accessible mental health solution
           </p>
-          <Link
-            to="/screening"
-            className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
-          >
-            {t('home.getStarted')}
-            <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
+          <p className="text-lg text-gray-500 mb-10 max-w-2xl mx-auto">
+            Your trusted companion for mental wellness, connecting you with AI support, professional counsellors, peer guidance, and curated resources
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              to="/chat"
+              className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-teal-600 to-teal-700 text-white font-semibold rounded-xl hover:from-teal-700 hover:to-teal-800 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+            >
+              Talk to Buddy
+              <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </Link>
+            <Link
+              to="/booking"
+              className="inline-flex items-center px-8 py-4 border-2 border-teal-600 text-teal-600 font-semibold rounded-xl hover:bg-teal-50 transform hover:scale-105 transition-all duration-200"
+            >
+              Book Counsellor
+              <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -89,22 +103,44 @@ const Home = () => {
         ))}
       </section>
 
-      {/* CTA Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-12 text-center text-white shadow-2xl">
-        <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to start your mental health journey?</h2>
-        <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto leading-relaxed">Join thousands of users who have found support and guidance through our platform.</p>
-        <div className="flex flex-col sm:flex-row gap-6 justify-center">
+      {/* Solution Flow Section */}
+      <section className="bg-gradient-to-r from-teal-600 to-blue-600 rounded-2xl p-12 text-white shadow-2xl">
+        <h2 className="text-3xl md:text-4xl font-bold mb-8 text-center">Our Solution Flow</h2>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+            <div className="text-2xl mb-3">🔐</div>
+            <p className="text-white/90">Students register anonymously via college email/roll number; only admin can view identity.</p>
+          </div>
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+            <div className="text-2xl mb-3">🤖</div>
+            <p className="text-white/90">AI-powered Buddy chatbot provides support, assesses severity, and routes serious cases to counsellors.</p>
+          </div>
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+            <div className="text-2xl mb-3">👩‍⚕️</div>
+            <p className="text-white/90">Students can confidentially book online/offline sessions with professional counsellors.</p>
+          </div>
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+            <div className="text-2xl mb-3">💬</div>
+            <p className="text-white/90">Anonymous Peer Talk allows sharing issues, getting responses from trained peers, with content filtering.</p>
+          </div>
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+            <div className="text-2xl mb-3">📚</div>
+            <p className="text-white/90">Resource Hub offers curated content and training courses with certification pathways for volunteers.</p>
+          </div>
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
+            <div className="text-2xl mb-3">📊</div>
+            <p className="text-white/90">Admin dashboard centralizes reports, counsellor management, student certification, and analytics.</p>
+          </div>
+        </div>
+        <div className="text-center mt-8">
           <Link
-            to="/screening"
-            className="px-8 py-4 bg-white text-blue-600 font-semibold rounded-xl hover:bg-gray-100 transform hover:scale-105 transition-all duration-200 shadow-lg"
+            to="/about"
+            className="inline-flex items-center px-8 py-4 bg-white text-teal-600 font-semibold rounded-xl hover:bg-gray-100 transform hover:scale-105 transition-all duration-200 shadow-lg"
           >
-            Take Assessment
-          </Link>
-          <Link
-            to="/chat"
-            className="px-8 py-4 border-2 border-white text-white font-semibold rounded-xl hover:bg-white/10 transform hover:scale-105 transition-all duration-200"
-          >
-            Chat Now
+            Learn More About Our Mission
+            <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
           </Link>
         </div>
       </section>

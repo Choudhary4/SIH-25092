@@ -4,77 +4,146 @@ import { Link } from 'react-router-dom'
 const Resources = () => {
   const [activeCategory, setActiveCategory] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
+  const [enrolledCourses, setEnrolledCourses] = useState([])
 
   const categories = [
     { id: 'all', name: 'All Resources', icon: '📚' },
-    { id: 'stress', name: 'Stress Management', icon: '😌' },
-    { id: 'anxiety', name: 'Anxiety Support', icon: '🧘‍♂️' },
-    { id: 'sleep', name: 'Better Sleep', icon: '😴' },
-    { id: 'academic', name: 'Academic Pressure', icon: '📖' },
-    { id: 'social', name: 'Social Skills', icon: '👥' }
+    { id: 'videos', name: 'Videos', icon: '🎥' },
+    { id: 'audios', name: 'Relaxation Audios', icon: '🎧' },
+    { id: 'guides', name: 'Mental Health Guides', icon: '�' },
+    { id: 'courses', name: 'Training Courses', icon: '🎓' },
+    { id: 'certification', name: 'Certification', icon: '🏆' }
   ]
 
   const resources = [
+    // Videos
     {
       id: 1,
-      title: "5-Minute Breathing Exercise",
-      description: "Quick relaxation technique for instant calm",
-      type: "Audio Guide",
-      category: "stress",
-      duration: "5 min",
-      difficulty: "Beginner",
-      image: "🎧"
+      title: "Understanding Mental Health - Hindi",
+      description: "Comprehensive guide to mental health awareness in Hindi",
+      type: "Video",
+      category: "videos",
+      duration: "15 min",
+      language: "Hindi",
+      image: "�",
+      difficulty: "Beginner"
     },
     {
       id: 2,
-      title: "Exam Anxiety Toolkit",
-      description: "Strategies to manage pre-exam nerves",
-      type: "PDF Guide",
-      category: "anxiety",
-      duration: "15 min read",
-      difficulty: "Intermediate",
-      image: "📄"
+      title: "Coping with Academic Stress",
+      description: "Practical strategies for managing study pressure",
+      type: "Video",
+      category: "videos",
+      duration: "12 min",
+      language: "English",
+      image: "🎥",
+      difficulty: "All levels"
     },
+    
+    // Relaxation Audios
     {
       id: 3,
-      title: "Progressive Muscle Relaxation",
-      description: "Full body relaxation for better sleep",
-      type: "Video",
-      category: "sleep",
-      duration: "20 min",
-      difficulty: "Beginner",
-      image: "🎥"
+      title: "5-Minute Meditation - Tamil",
+      description: "Quick mindfulness practice in Tamil",
+      type: "Audio",
+      category: "audios",
+      duration: "5 min",
+      language: "Tamil",
+      image: "🎧",
+      difficulty: "Beginner"
     },
     {
       id: 4,
-      title: "Time Management for Students",
-      description: "Balance studies, work, and personal life",
-      type: "Interactive Course",
-      category: "academic",
-      duration: "45 min",
-      difficulty: "All levels",
-      image: "⏰"
+      title: "Progressive Muscle Relaxation",
+      description: "Full body relaxation technique for better sleep",
+      type: "Audio",
+      category: "audios",
+      duration: "20 min",
+      language: "English",
+      image: "🎧",
+      difficulty: "Intermediate"
     },
     {
       id: 5,
-      title: "Building Confidence in Social Situations",
-      description: "Tips for better social interactions",
-      type: "Article Series",
-      category: "social",
-      duration: "10 min read",
-      difficulty: "Intermediate",
-      image: "💬"
+      title: "Nature Sounds for Focus",
+      description: "Background sounds to improve concentration",
+      type: "Audio",
+      category: "audios",
+      duration: "30 min",
+      language: "N/A",
+      image: "�",
+      difficulty: "All levels"
     },
+
+    // Mental Health Guides
     {
       id: 6,
-      title: "Mindful Study Sessions",
-      description: "Focus techniques for better learning",
-      type: "Audio Guide",
-      category: "academic",
-      duration: "12 min",
+      title: "Student Mental Health Guide",
+      description: "Complete handbook for student mental wellness",
+      type: "PDF Guide",
+      category: "guides",
+      duration: "30 min read",
+      language: "English",
+      image: "📖",
+      difficulty: "All levels"
+    },
+    {
+      id: 7,
+      title: "Anxiety Management Workbook",
+      description: "Practical exercises to manage anxiety effectively",
+      type: "Interactive Guide",
+      category: "guides",
+      duration: "45 min",
+      language: "English",
+      image: "📋",
+      difficulty: "Intermediate"
+    },
+
+    // Training Courses
+    {
+      id: 8,
+      title: "Peer Support Training Course",
+      description: "Become a certified peer volunteer to help other students",
+      type: "Training Course",
+      category: "courses",
+      duration: "8 hours",
+      language: "English",
+      image: "🎓",
+      difficulty: "Advanced",
+      certification: true
+    },
+    {
+      id: 9,
+      title: "Mental Health First Aid",
+      description: "Learn to recognize and respond to mental health crises",
+      type: "Training Course",
+      category: "courses",
+      duration: "6 hours",
+      language: "English",
+      image: "🚑",
+      difficulty: "Intermediate",
+      certification: true
+    },
+    {
+      id: 10,
+      title: "Communication Skills for Support",
+      description: "Develop effective listening and support skills",
+      type: "Training Course",
+      category: "courses",
+      duration: "4 hours",
+      language: "English",
+      image: "💬",
       difficulty: "Beginner",
-      image: "🎧"
+      certification: true
     }
+  ]
+
+  const certificationPath = [
+    { step: 1, title: "Complete Training Modules", description: "Finish required courses" },
+    { step: 2, title: "Pass Assessment Test", description: "Score 80% or higher" },
+    { step: 3, title: "Counsellor Interview", description: "Professional evaluation" },
+    { step: 4, title: "Admin Approval", description: "Final certification approval" },
+    { step: 5, title: "Become Peer Volunteer", description: "Start helping other students" }
   ]
 
   const filteredResources = resources.filter(resource => {
@@ -90,25 +159,75 @@ const Resources = () => {
     { name: "Student Emergency Line", number: "ext. 911", hours: "Available 24/7" }
   ]
 
+  const handleEnrollCourse = (courseId) => {
+    if (!enrolledCourses.includes(courseId)) {
+      setEnrolledCourses([...enrolledCourses, courseId])
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
       {/* Header Section */}
-      <div className="bg-white shadow-sm">
+      <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Resource Hub</h1>
-          <p className="text-gray-600 max-w-2xl">
-            Self-help tools, guides, and resources to support your mental wellness journey. 
-            All materials are created specifically for student life.
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
+                Resource Hub
+              </h1>
+              <p className="text-gray-600 max-w-2xl">
+                Curated videos, relaxation audios, mental health guides, and training courses with certification options. 
+                Available in multiple regional languages with AI-powered recommendations.
+              </p>
+            </div>
+            <div className="hidden md:block">
+              <div className="flex items-center space-x-4 text-sm text-gray-500">
+                <span>🎥 Videos</span>
+                <span>🎧 Audios</span>
+                <span>📚 Guides</span>
+                <span>🎓 Courses</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* AI Recommendations Section */}
+        <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-2xl p-6 mb-8 border border-purple-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">🤖 AI Recommendations</h2>
+              <p className="text-gray-600">Based on your recent interactions and preferences</p>
+            </div>
+            <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+              Get Recommendations
+            </button>
+          </div>
+          <div className="grid md:grid-cols-3 gap-4 mt-6">
+            <div className="bg-white rounded-lg p-4 border border-purple-200">
+              <span className="text-2xl mb-2 block">🎧</span>
+              <h3 className="font-semibold text-gray-900">Stress Relief Audio</h3>
+              <p className="text-sm text-gray-600">Recommended based on your recent chat</p>
+            </div>
+            <div className="bg-white rounded-lg p-4 border border-purple-200">
+              <span className="text-2xl mb-2 block">📚</span>
+              <h3 className="font-semibold text-gray-900">Anxiety Guide</h3>
+              <p className="text-sm text-gray-600">Popular among students like you</p>
+            </div>
+            <div className="bg-white rounded-lg p-4 border border-purple-200">
+              <span className="text-2xl mb-2 block">🎓</span>
+              <h3 className="font-semibold text-gray-900">Peer Training</h3>
+              <p className="text-sm text-gray-600">Help others while learning</p>
+            </div>
+          </div>
+        </div>
+
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Sidebar */}
           <div className="lg:col-span-1">
             {/* Search */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Search Resources
               </label>
@@ -117,21 +236,21 @@ const Resources = () => {
                 placeholder="Find what you need..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
             </div>
 
             {/* Categories */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
               <h3 className="font-semibold text-gray-900 mb-4">Categories</h3>
               <div className="space-y-2">
                 {categories.map((category) => (
                   <button
                     key={category.id}
                     onClick={() => setActiveCategory(category.id)}
-                    className={`w-full flex items-center space-x-3 px-3 py-2 rounded-md text-left transition-colors ${
+                    className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
                       activeCategory === category.id
-                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        ? 'bg-purple-50 text-purple-700 border border-purple-200'
                         : 'text-gray-700 hover:bg-gray-50'
                     }`}
                   >
@@ -142,22 +261,47 @@ const Resources = () => {
               </div>
             </div>
 
-            {/* Emergency Contacts */}
-            <div className="bg-red-50 rounded-lg p-6 border border-red-200">
-              <h3 className="font-semibold text-red-900 mb-4 flex items-center">
+            {/* Certification Path */}
+            {activeCategory === 'certification' && (
+              <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-6 border border-yellow-200 mb-6">
+                <h3 className="font-semibold text-orange-900 mb-4 flex items-center">
+                  <span className="mr-2">🏆</span>
+                  Certification Path
+                </h3>
+                <div className="space-y-3">
+                  {certificationPath.map((step, index) => (
+                    <div key={index} className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center text-xs font-bold text-orange-600">
+                        {step.step}
+                      </div>
+                      <div>
+                        <div className="font-medium text-orange-900 text-sm">{step.title}</div>
+                        <div className="text-orange-700 text-xs">{step.description}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Quick Help */}
+            <div className="bg-teal-50 rounded-xl p-6 border border-teal-200">
+              <h3 className="font-semibold text-teal-900 mb-4 flex items-center">
                 <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Need Immediate Help?
+                Need Help?
               </h3>
               <div className="space-y-3">
-                {emergencyContacts.map((contact, index) => (
-                  <div key={index} className="text-sm">
-                    <div className="font-medium text-red-900">{contact.name}</div>
-                    <div className="text-red-700">{contact.number}</div>
-                    <div className="text-red-600 text-xs">{contact.hours}</div>
-                  </div>
-                ))}
+                <Link to="/chat" className="block text-sm text-teal-700 hover:text-teal-800">
+                  💬 Talk to Buddy
+                </Link>
+                <Link to="/booking" className="block text-sm text-teal-700 hover:text-teal-800">
+                  👩‍⚕️ Book Counsellor
+                </Link>
+                <Link to="/forum" className="block text-sm text-teal-700 hover:text-teal-800">
+                  👥 Peer Support
+                </Link>
               </div>
             </div>
           </div>
@@ -214,38 +358,74 @@ const Resources = () => {
               </h2>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
               {filteredResources.map((resource) => (
-                <div key={resource.id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-200">
+                <div key={resource.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border border-gray-200 overflow-hidden group">
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-4">
-                      <div className="text-3xl">{resource.image}</div>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        {resource.type}
-                      </span>
+                      <div className="text-4xl">{resource.image}</div>
+                      <div className="flex items-center space-x-2">
+                        {resource.language && (
+                          <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                            {resource.language}
+                          </span>
+                        )}
+                        {resource.certification && (
+                          <span className="px-2 py-1 bg-yellow-100 text-yellow-600 text-xs rounded-full">
+                            🏆 Certification
+                          </span>
+                        )}
+                      </div>
                     </div>
                     
-                    <h3 className="font-semibold text-gray-900 mb-2">{resource.title}</h3>
-                    <p className="text-gray-600 text-sm mb-4">{resource.description}</p>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-purple-600 transition-colors">
+                      {resource.title}
+                    </h3>
                     
-                    <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                      {resource.description}
+                    </p>
+                    
+                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
                       <span className="flex items-center">
-                        <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         {resource.duration}
                       </span>
-                      <span className="flex items-center">
-                        <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        resource.difficulty === 'Beginner' ? 'bg-green-100 text-green-600' :
+                        resource.difficulty === 'Intermediate' ? 'bg-yellow-100 text-yellow-600' :
+                        resource.difficulty === 'Advanced' ? 'bg-red-100 text-red-600' :
+                        'bg-blue-100 text-blue-600'
+                      }`}>
                         {resource.difficulty}
                       </span>
                     </div>
                     
-                    <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium">
-                      Access Resource
-                    </button>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                        {resource.type}
+                      </span>
+                      
+                      {resource.category === 'courses' ? (
+                        <button
+                          onClick={() => handleEnrollCourse(resource.id)}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            enrolledCourses.includes(resource.id)
+                              ? 'bg-green-100 text-green-700 cursor-default'
+                              : 'bg-purple-600 text-white hover:bg-purple-700'
+                          }`}
+                          disabled={enrolledCourses.includes(resource.id)}
+                        >
+                          {enrolledCourses.includes(resource.id) ? '✓ Enrolled' : 'Enroll Now'}
+                        </button>
+                      ) : (
+                        <button className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors">
+                          Access Now
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
