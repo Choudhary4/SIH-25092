@@ -13,7 +13,7 @@ const Booking = () => {
   const [selectedCounsellor, setSelectedCounsellor] = useState(null);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
-  const [appointmentMode, setAppointmentMode] = useState('tele');
+  const [appointmentMode, setAppointmentMode] = useState('chat');
   const [appointmentReason, setAppointmentReason] = useState('');
   const [appointmentUrgency, setAppointmentUrgency] = useState('medium');
   const [location, setLocation] = useState('');
@@ -116,7 +116,7 @@ const Booking = () => {
     setSelectedCounsellor(null);
     setAvailableSlots([]);
     setSelectedSlot(null);
-    setAppointmentMode('tele');
+    setAppointmentMode('chat');
     setAppointmentReason('');
     setAppointmentUrgency('medium');
     setLocation('');
@@ -183,8 +183,40 @@ const Booking = () => {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('booking.title')}</h1>
-          <p className="text-lg text-gray-600">{t('booking.subtitle')}</p>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-2">
+            Counsellor Talk
+          </h1>
+          <p className="text-lg text-gray-600 mb-4">Professional Support System - Direct access to certified counsellors</p>
+          
+          {/* Flow Explanation */}
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 mb-6 border border-green-200 max-w-4xl mx-auto">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center justify-center">
+              <span className="mr-2">👨‍⚕️</span>
+              How Counsellor Talk Works
+            </h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+              <div className="bg-white rounded-lg p-4 text-center">
+                <div className="text-2xl mb-2">📅</div>
+                <div className="font-medium text-gray-900 mb-1">1. Choose Session</div>
+                <div className="text-gray-600">Select chat, video, or offline meet</div>
+              </div>
+              <div className="bg-white rounded-lg p-4 text-center">
+                <div className="text-2xl mb-2">✅</div>
+                <div className="font-medium text-gray-900 mb-1">2. Book & Confirm</div>
+                <div className="text-gray-600">Get confirmation & session link</div>
+              </div>
+              <div className="bg-white rounded-lg p-4 text-center">
+                <div className="text-2xl mb-2">💬</div>
+                <div className="font-medium text-gray-900 mb-1">3. Attend Session</div>
+                <div className="text-gray-600">Meet with certified counsellor</div>
+              </div>
+              <div className="bg-white rounded-lg p-4 text-center">
+                <div className="text-2xl mb-2">📋</div>
+                <div className="font-medium text-gray-900 mb-1">4. Follow-up</div>
+                <div className="text-gray-600">Report sent to admin, further sessions if needed</div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Progress Steps */}
@@ -528,27 +560,45 @@ const BookingForm = ({
 
       {/* Booking Details Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Appointment Mode */}
+        {/* Session Type Selection */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
-            Appointment Mode <span className="text-red-500">*</span>
+            Session Type <span className="text-red-500">*</span>
           </label>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <label className={`border-2 p-4 rounded-lg cursor-pointer transition-colors ${
-              appointmentMode === 'tele' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 hover:border-gray-400'
+              appointmentMode === 'chat' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 hover:border-gray-400'
             }`}>
               <input
                 type="radio"
                 name="appointmentMode"
-                value="tele"
-                checked={appointmentMode === 'tele'}
+                value="chat"
+                checked={appointmentMode === 'chat'}
                 onChange={(e) => setAppointmentMode(e.target.value)}
                 className="sr-only"
               />
               <div className="text-center">
-                <div className="text-2xl mb-2">💻</div>
-                <div className="font-medium">Online Session</div>
-                <div className="text-sm text-gray-600">Video call consultation</div>
+                <div className="text-2xl mb-2">�</div>
+                <div className="font-medium">Online Chat</div>
+                <div className="text-sm text-gray-600">Text-based counselling session</div>
+              </div>
+            </label>
+
+            <label className={`border-2 p-4 rounded-lg cursor-pointer transition-colors ${
+              appointmentMode === 'video' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 hover:border-gray-400'
+            }`}>
+              <input
+                type="radio"
+                name="appointmentMode"
+                value="video"
+                checked={appointmentMode === 'video'}
+                onChange={(e) => setAppointmentMode(e.target.value)}
+                className="sr-only"
+              />
+              <div className="text-center">
+                <div className="text-2xl mb-2">📹</div>
+                <div className="font-medium">Video Call</div>
+                <div className="text-sm text-gray-600">Face-to-face video consultation</div>
               </div>
             </label>
             
@@ -565,8 +615,8 @@ const BookingForm = ({
               />
               <div className="text-center">
                 <div className="text-2xl mb-2">🏢</div>
-                <div className="font-medium">In-Person</div>
-                <div className="text-sm text-gray-600">Face-to-face meeting</div>
+                <div className="font-medium">Offline Meet</div>
+                <div className="text-sm text-gray-600">On-campus face-to-face meeting</div>
               </div>
             </label>
           </div>
@@ -643,6 +693,37 @@ const BookingForm = ({
             maxLength={2000}
           />
           <p className="text-xs text-gray-500 mt-1">{privateNotes.length}/2000 characters</p>
+        </div>
+
+        {/* What Happens Next */}
+        <div className="bg-blue-50 rounded-lg p-4 mb-6">
+          <h4 className="font-medium text-blue-900 mb-2">What happens next?</h4>
+          <div className="space-y-2 text-sm text-blue-800">
+            <div className="flex items-start space-x-2">
+              <span className="font-medium">1.</span>
+              <span>Your booking request will be sent to the counsellor</span>
+            </div>
+            <div className="flex items-start space-x-2">
+              <span className="font-medium">2.</span>
+              <span>You'll receive a confirmation email/notification within 30 minutes</span>
+            </div>
+            <div className="flex items-start space-x-2">
+              <span className="font-medium">3.</span>
+              <span>
+                {appointmentMode === 'chat' && 'You\'ll get a secure chat link to join the session'}
+                {appointmentMode === 'video' && 'You\'ll receive a video call link for your session'}
+                {appointmentMode === 'in-person' && 'Meeting location details will be confirmed'}
+              </span>
+            </div>
+            <div className="flex items-start space-x-2">
+              <span className="font-medium">4.</span>
+              <span>The counsellor will prepare for your session based on your notes</span>
+            </div>
+            <div className="flex items-start space-x-2">
+              <span className="font-medium">5.</span>
+              <span>After the session, a summary report will be sent to the admin dashboard (confidentially)</span>
+            </div>
+          </div>
         </div>
 
         <div className="flex space-x-4">
