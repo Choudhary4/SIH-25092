@@ -30,7 +30,17 @@ export const useApi = () => {
       }
 
       // Use full URL if endpoint starts with http, otherwise use relative path
-      const baseUrl = import.meta?.env?.VITE_API_URL || 'http://localhost:5000/api';
+      // Handle different ways to get the API URL
+      let baseUrl;
+      try {
+        baseUrl = import.meta?.env?.VITE_API_URL || 
+                 (typeof window !== 'undefined' && window.location.origin.includes('localhost') ? 
+                  'http://localhost:5000' : 
+                  'http://localhost:5000');
+      } catch (e) {
+        baseUrl = 'http://localhost:5000';
+      }
+      
       const url = endpoint.startsWith('http') ? endpoint : `${baseUrl}${endpoint}`;
       
       const response = await fetch(url, config);
