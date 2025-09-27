@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
+import logoImage from '../assets/Mann-mitra.png'
 
 const CounsellorDashboard = () => {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('dashboard')
   const [appointments, setAppointments] = useState([])
   const [availability, setAvailability] = useState([])
@@ -31,6 +34,7 @@ const CounsellorDashboard = () => {
   const tabs = [
     { id: 'dashboard', name: 'Dashboard', icon: '📊' },
     { id: 'appointments', name: 'Appointments', icon: '📅' },
+    { id: 'certification', name: 'Certification Interviews', icon: '🏆' },
     { id: 'availability', name: 'Availability', icon: '⏰' },
     { id: 'reports', name: 'Session Reports', icon: '📄' },
     { id: 'profile', name: 'Profile', icon: '👤' }
@@ -50,9 +54,21 @@ const CounsellorDashboard = () => {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Counsellor Dashboard</h1>
-              <p className="text-gray-600">Welcome back, {user?.name || 'Counsellor'}</p>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => navigate('/')}
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+              >
+                <img 
+                  src={logoImage} 
+                  alt="Mann-Mitra Logo" 
+                  className="h-18 w-auto"
+                />
+              </button>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Counsellor Dashboard</h1>
+                <p className="text-gray-600">Welcome back, {user?.name || 'Counsellor'}</p>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-sm text-gray-500">
@@ -93,6 +109,7 @@ const CounsellorDashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'dashboard' && <DashboardTab />}
         {activeTab === 'appointments' && <AppointmentsTab />}
+        {activeTab === 'certification' && <CertificationTab />}
         {activeTab === 'availability' && <AvailabilityTab />}
         {activeTab === 'reports' && <ReportsTab />}
         {activeTab === 'profile' && <ProfileTab user={user} />}
@@ -446,6 +463,347 @@ const ProfileTab = ({ user }) => {
           </p>
         </div>
       </div>
+    </div>
+  )
+}
+
+// Certification Interviews Tab
+const CertificationTab = () => {
+  const [interviews, setInterviews] = useState([])
+  const [selectedInterview, setSelectedInterview] = useState(null)
+  const [showEvaluationModal, setShowEvaluationModal] = useState(false)
+  const [evaluationData, setEvaluationData] = useState({
+    approved: null,
+    notes: '',
+    recommendations: ''
+  })
+
+  useEffect(() => {
+    // Load interviews from localStorage (demo data)
+    const storedInterviews = JSON.parse(localStorage.getItem('certificationInterviews') || '[]')
+    
+    // Add some demo interviews if none exist
+    if (storedInterviews.length === 0) {
+      const demoInterviews = [
+        {
+          id: 1,
+          studentId: 'user123',
+          studentName: 'Anonymous Student #1234',
+          counsellorId: '1',
+          counsellorName: 'Dr. Sarah Johnson',
+          date: '2025-09-30',
+          time: '10:00',
+          examScore: 87,
+          status: 'scheduled',
+          notes: 'Interested in peer support for anxiety and depression topics',
+          createdAt: '2025-09-27T10:00:00.000Z'
+        },
+        {
+          id: 2,
+          studentId: 'user456',
+          studentName: 'Anonymous Student #5678',
+          counsellorId: '1',
+          counsellorName: 'Dr. Sarah Johnson',
+          date: '2025-09-28',
+          time: '14:30',
+          examScore: 92,
+          status: 'completed',
+          evaluation: {
+            approved: true,
+            notes: 'Excellent understanding of peer support principles and strong communication skills.',
+            recommendations: 'Recommended for certification approval.',
+            evaluatedAt: '2025-09-27T14:30:00.000Z'
+          },
+          createdAt: '2025-09-25T10:00:00.000Z'
+        }
+      ]
+      localStorage.setItem('certificationInterviews', JSON.stringify(demoInterviews))
+      setInterviews(demoInterviews)
+    } else {
+      setInterviews(storedInterviews)
+    }
+  }, [])
+
+  const handleCompleteInterview = (interview) => {
+    setSelectedInterview(interview)
+    setShowEvaluationModal(true)
+  }
+
+  const handleSubmitEvaluation = () => {
+    const updatedInterviews = interviews.map(interview => {
+      if (interview.id === selectedInterview.id) {
+        return {
+          ...interview,
+          status: 'completed',
+          evaluation: {
+            ...evaluationData,
+            evaluatedAt: new Date().toISOString()
+          }
+        }
+      }
+      return interview
+    })
+
+    setInterviews(updatedInterviews)
+    localStorage.setItem('certificationInterviews', JSON.stringify(updatedInterviews))
+    
+    // If approved, add to admin certification queue
+    if (evaluationData.approved) {
+      const certificationQueue = JSON.parse(localStorage.getItem('certificationQueue') || '[]')
+      certificationQueue.push({
+        id: Date.now(),
+        studentId: selectedInterview.studentId,
+        studentName: selectedInterview.studentName,
+        examScore: selectedInterview.examScore,
+        interviewDate: selectedInterview.date,
+        counsellorName: selectedInterview.counsellorName,
+        counsellorNotes: evaluationData.notes,
+        status: 'pending_admin_approval',
+        submittedAt: new Date().toISOString()
+      })
+      localStorage.setItem('certificationQueue', JSON.stringify(certificationQueue))
+    }
+
+    setShowEvaluationModal(false)
+    setSelectedInterview(null)
+    setEvaluationData({ approved: null, notes: '', recommendations: '' })
+  }
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    })
+  }
+
+  const scheduledInterviews = interviews.filter(i => i.status === 'scheduled')
+  const completedInterviews = interviews.filter(i => i.status === 'completed')
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">🏆 Certification Interview Management</h2>
+        <p className="text-gray-600 mb-6">
+          Review and evaluate students who have completed the peer support training course and passed their certification exam.
+        </p>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <div className="text-2xl font-bold text-blue-600">{scheduledInterviews.length}</div>
+            <div className="text-sm text-blue-800">Scheduled Interviews</div>
+          </div>
+          <div className="bg-green-50 p-4 rounded-lg">
+            <div className="text-2xl font-bold text-green-600">{completedInterviews.filter(i => i.evaluation?.approved).length}</div>
+            <div className="text-sm text-green-800">Approved Students</div>
+          </div>
+          <div className="bg-red-50 p-4 rounded-lg">
+            <div className="text-2xl font-bold text-red-600">{completedInterviews.filter(i => i.evaluation?.approved === false).length}</div>
+            <div className="text-sm text-red-800">Need More Training</div>
+          </div>
+        </div>
+
+        {/* Scheduled Interviews */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">📅 Scheduled Interviews</h3>
+          {scheduledInterviews.length > 0 ? (
+            <div className="space-y-4">
+              {scheduledInterviews.map((interview) => (
+                <div key={interview.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-4">
+                        <div>
+                          <h4 className="font-medium text-gray-900">{interview.studentName}</h4>
+                          <p className="text-sm text-gray-600">
+                            {formatDate(interview.date)} at {interview.time}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                            Exam Score: {interview.examScore}%
+                          </span>
+                        </div>
+                      </div>
+                      {interview.notes && (
+                        <p className="text-sm text-gray-600 mt-2">
+                          <strong>Student Notes:</strong> {interview.notes}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleCompleteInterview(interview)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Complete Interview
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-8">No scheduled interviews</p>
+          )}
+        </div>
+
+        {/* Completed Interviews */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">✅ Completed Interviews</h3>
+          {completedInterviews.length > 0 ? (
+            <div className="space-y-4">
+              {completedInterviews.map((interview) => (
+                <div key={interview.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <h4 className="font-medium text-gray-900">{interview.studentName}</h4>
+                      <p className="text-sm text-gray-600">
+                        Interviewed on {formatDate(interview.date)} • Exam Score: {interview.examScore}%
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {interview.evaluation?.approved ? (
+                        <span className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">
+                          ✅ Approved for Certification
+                        </span>
+                      ) : (
+                        <span className="px-3 py-1 bg-red-100 text-red-800 text-sm rounded-full">
+                          ❌ Needs More Training
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {interview.evaluation?.notes && (
+                    <div className="bg-gray-50 rounded-lg p-3 mt-3">
+                      <p className="text-sm text-gray-700">
+                        <strong>Evaluation Notes:</strong> {interview.evaluation.notes}
+                      </p>
+                      {interview.evaluation.recommendations && (
+                        <p className="text-sm text-gray-700 mt-2">
+                          <strong>Recommendations:</strong> {interview.evaluation.recommendations}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-8">No completed interviews</p>
+          )}
+        </div>
+      </div>
+
+      {/* Evaluation Modal */}
+      {showEvaluationModal && selectedInterview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">
+              Interview Evaluation - {selectedInterview.studentName}
+            </h3>
+            
+            <div className="space-y-4 mb-6">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h4 className="font-medium text-blue-900 mb-2">Student Information</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-blue-700 font-medium">Exam Score:</span>
+                    <span className="text-blue-900 ml-2">{selectedInterview.examScore}%</span>
+                  </div>
+                  <div>
+                    <span className="text-blue-700 font-medium">Interview Date:</span>
+                    <span className="text-blue-900 ml-2">{formatDate(selectedInterview.date)}</span>
+                  </div>
+                </div>
+                {selectedInterview.notes && (
+                  <div className="mt-2">
+                    <span className="text-blue-700 font-medium text-sm">Student Notes:</span>
+                    <p className="text-blue-900 text-sm mt-1">{selectedInterview.notes}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Approval Decision */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Certification Recommendation *
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="approved"
+                      checked={evaluationData.approved === true}
+                      onChange={() => setEvaluationData({...evaluationData, approved: true})}
+                      className="mr-2"
+                    />
+                    <span className="text-green-700">✅ Approve for Certification</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="approved"
+                      checked={evaluationData.approved === false}
+                      onChange={() => setEvaluationData({...evaluationData, approved: false})}
+                      className="mr-2"
+                    />
+                    <span className="text-red-700">❌ Needs Additional Training</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Evaluation Notes */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Evaluation Notes *
+                </label>
+                <textarea
+                  rows={4}
+                  value={evaluationData.notes}
+                  onChange={(e) => setEvaluationData({...evaluationData, notes: e.target.value})}
+                  placeholder="Provide detailed feedback on the student's readiness for peer support role..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Recommendations */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Recommendations (Optional)
+                </label>
+                <textarea
+                  rows={3}
+                  value={evaluationData.recommendations}
+                  onChange={(e) => setEvaluationData({...evaluationData, recommendations: e.target.value})}
+                  placeholder="Any specific recommendations or areas for improvement..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex space-x-4">
+              <button
+                onClick={handleSubmitEvaluation}
+                disabled={evaluationData.approved === null || !evaluationData.notes}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Submit Evaluation
+              </button>
+              <button
+                onClick={() => {
+                  setShowEvaluationModal(false)
+                  setSelectedInterview(null)
+                  setEvaluationData({ approved: null, notes: '', recommendations: '' })
+                }}
+                className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

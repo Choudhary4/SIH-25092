@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { FiUser, FiLogIn, FiMessageSquare, FiBookOpen, FiUsers, FiHelpCircle, FiGlobe } from 'react-icons/fi'
 import LanguageSwitcher from './common/LanguageSwitcher'
+import logoImage from '../assets/Mann-mitra.png'
 
 const navItems = [
   {
@@ -51,12 +52,11 @@ const Header = () => {
 
           {/* Logo as Home Link */}
           <Link to="/" className="flex items-center space-x-3 flex-shrink-0">
-            <div className="w-10 h-10 bg-gradient-to-r from-teal-600 to-blue-600 rounded-xl flex items-center justify-center shadow-lg cursor-pointer">
-              <span className="text-white font-bold text-lg select-none">MM</span>
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent hidden sm:block">
-              Mann-Mitra
-            </span>
+            <img 
+              src={logoImage} 
+              alt="Mann-Mitra Logo" 
+              className="h-32 w-auto cursor-pointer hover:opacity-80 transition-opacity"
+            />
           </Link>
 
           {/* Navbar links */}

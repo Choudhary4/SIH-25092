@@ -409,17 +409,21 @@ const Resources = () => {
                       </span>
                       
                       {resource.category === 'courses' ? (
-                        <button
-                          onClick={() => handleEnrollCourse(resource.id)}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                            enrolledCourses.includes(resource.id)
-                              ? 'bg-green-100 text-green-700 cursor-default'
-                              : 'bg-purple-600 text-white hover:bg-purple-700'
-                          }`}
-                          disabled={enrolledCourses.includes(resource.id)}
-                        >
-                          {enrolledCourses.includes(resource.id) ? '✓ Enrolled' : 'Enroll Now'}
-                        </button>
+                        enrolledCourses.includes(resource.id) ? (
+                          <Link
+                            to={`/certification/course/${resource.id}`}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                          >
+                            Start Course
+                          </Link>
+                        ) : (
+                          <button
+                            onClick={() => handleEnrollCourse(resource.id)}
+                            className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+                          >
+                            Enroll Now
+                          </button>
+                        )
                       ) : (
                         <button className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors">
                           Access Now

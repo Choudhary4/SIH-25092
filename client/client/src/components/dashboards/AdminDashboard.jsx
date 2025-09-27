@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import logoImage from '../../assets/Mann-mitra.png'
 
 const AdminDashboard = () => {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalCounsellors: 0,
@@ -58,12 +60,26 @@ const AdminDashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Admin Dashboard - {user?.name} 🔐
-          </h1>
-          <p className="text-gray-600">
-            Platform overview and administrative controls.
-          </p>
+          <div className="flex items-center space-x-4 mb-4">
+            <button
+              onClick={() => navigate('/')}
+              className="cursor-pointer hover:opacity-80 transition-opacity"
+            >
+              <img 
+                src={logoImage} 
+                alt="Mann-Mitra Logo" 
+                className="h-48 w-auto"
+              />
+            </button>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Admin Dashboard - {user?.name} 🔐
+              </h1>
+              <p className="text-gray-600">
+                Platform overview and administrative controls.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Stats Cards */}

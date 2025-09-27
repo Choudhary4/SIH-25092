@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import logoImage from '../assets/Mann-mitra.png';
 import {
   BarChart,
   Bar,
@@ -20,6 +22,7 @@ import { api } from '../utils/api';
 
 const AdminDashboard = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   // State management
   const [dashboardData, setDashboardData] = useState(null);
@@ -195,9 +198,21 @@ const AdminDashboard = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('adminDashboard.title')}</h1>
-            <p className="text-lg text-gray-600">{t('adminDashboard.subtitle')}</p>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => navigate('/')}
+              className="cursor-pointer hover:opacity-80 transition-opacity"
+            >
+              <img 
+                src={logoImage} 
+                alt="Mann-Mitra Logo" 
+                className="h-62 w-auto"
+              />
+            </button>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('adminDashboard.title')}</h1>
+              <p className="text-lg text-gray-600">{t('adminDashboard.subtitle')}</p>
+            </div>
           </div>
 
           <div className="flex items-center space-x-4 mt-4 lg:mt-0">
