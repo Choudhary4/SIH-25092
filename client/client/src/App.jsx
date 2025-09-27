@@ -35,8 +35,6 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Routes>
         {/* Auth routes - no header */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/signup" element={<AdminSignup />} />
         <Route path="/counsellor/login" element={<CounsellorLogin />} />
@@ -51,6 +49,8 @@ function App() {
             <Header />
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
               <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
                 <Route path="/" element={<Home />} />
                 <Route path="/screening" element={<Screening />} />
                 <Route path='/dashboard' element = {<StudentDashboard/>}/>
