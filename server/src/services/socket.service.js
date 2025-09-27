@@ -74,7 +74,7 @@ class SocketService {
 
         // Verify JWT token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.id).select('name email role collegeId isActive');
+        const user = await User.findById(decoded.userId).select('name email role collegeId isActive anonymousDisplayName');
         
         if (!user || !user.isActive) {
           return next(new Error('Authentication failed'));
@@ -83,7 +83,8 @@ class SocketService {
         // Attach user information to socket
         socket.userId = user._id.toString();
         socket.userRole = user.role;
-        socket.userName = user.name;
+        socket.userName = user.anonymousDisplayName || user.name; // Use anonymous name for public interactions
+        socket.userRealName = user.name; // Keep real name for admin purposes
         socket.userEmail = user.email;
         socket.collegeId = user.collegeId;
         socket.isAuthenticated = true;

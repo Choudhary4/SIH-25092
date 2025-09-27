@@ -12,7 +12,6 @@ const Register = () => {
     password: '',
     confirmPassword: '',
     collegeId: '',
-    role: 'student',
     languagePref: 'en',
     agreeToTerms: false
   })
@@ -115,7 +114,7 @@ const Register = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
+      <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
@@ -125,20 +124,14 @@ const Register = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <Link to="/" className="flex items-center justify-center space-x-3 mb-8">
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-xl">M</span>
-            </div>
-            <span className="text-3xl font-bold text-gray-900">MindCare</span>
-          </Link>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            {t('auth.signup')}
+            Student Registration
           </h2>
           <p className="text-gray-600">
-            Create your account to get started
+            Create your anonymous student account for mental health support
           </p>
         </div>
 
@@ -242,52 +235,29 @@ const Register = () => {
               </div>
             </div>
 
-            {/* College ID and Role */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="collegeId" className="block text-sm font-medium text-gray-700 mb-2">
-                  College ID *
-                </label>
-                <input
-                  id="collegeId"
-                  name="collegeId"
-                  type="text"
-                  required
-                  value={formData.collegeId}
-                  onChange={handleChange}
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                    validationErrors.collegeId ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  placeholder="Enter your college ID"
-                />
-                {validationErrors.collegeId && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.collegeId}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
-                  User Role *
-                </label>
-                <select
-                  id="role"
-                  name="role"
-                  required
-                  value={formData.role}
-                  onChange={handleChange}
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                    validationErrors.role ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                >
-                  <option value="student">Student</option>
-                  <option value="counsellor">Counsellor</option>
-                  <option value="admin">Admin</option>
-                  <option value="moderator">Moderator</option>
-                </select>
-                {validationErrors.role && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.role}</p>
-                )}
-              </div>
+            {/* Student Roll Number */}
+            <div>
+              <label htmlFor="collegeId" className="block text-sm font-medium text-gray-700 mb-2">
+                Student Roll Number / ID *
+              </label>
+              <input
+                id="collegeId"
+                name="collegeId"
+                type="text"
+                required
+                value={formData.collegeId}
+                onChange={handleChange}
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                  validationErrors.collegeId ? 'border-red-300' : 'border-gray-300'
+                }`}
+                placeholder="Enter your student roll number or ID"
+              />
+              {validationErrors.collegeId && (
+                <p className="mt-1 text-sm text-red-600">{validationErrors.collegeId}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">
+                Your identity remains anonymous - this is only for admin verification
+              </p>
             </div>
 
             {/* Language Preference */}
@@ -367,6 +337,20 @@ const Register = () => {
                 {t('auth.login')}
               </Link>
             </p>
+          </div>
+
+          {/* Admin Registration Link */}
+          <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+            <p className="text-sm text-gray-500 mb-3">
+              College Administration?
+            </p>
+            <Link
+              to="/admin/signup"
+              className="text-sm text-red-600 hover:text-red-800 font-medium flex items-center justify-center space-x-1"
+            >
+              <span>🏛️</span>
+              <span>Create Admin Account</span>
+            </Link>
           </div>
         </div>
 

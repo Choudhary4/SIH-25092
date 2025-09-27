@@ -44,7 +44,7 @@ const Login = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
+      <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
@@ -54,15 +54,9 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 mx-auto">
         <div className="text-center">
-          <Link to="/" className="flex items-center justify-center space-x-3 mb-8">
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-xl">M</span>
-            </div>
-            <span className="text-3xl font-bold text-gray-900">MindCare</span>
-          </Link>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
             {t('auth.login')}
           </h2>
@@ -158,8 +152,31 @@ const Login = () => {
               </Link>
             </p>
           </div>
-        </div>
 
+          {/* Admin and Counsellor Login Links */}
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <p className="text-center text-sm text-gray-500 mb-4">
+              Staff Access
+            </p>
+            <div className="flex justify-center space-x-4">
+              <Link
+                to="/admin/login"
+                className="text-sm text-red-600 hover:text-red-800 font-medium flex items-center space-x-1"
+              >
+                <span>🔒</span>
+                <span>Admin Login</span>
+              </Link>
+              <span className="text-gray-300">|</span>
+              <Link
+                to="/counsellor/login"
+                className="text-sm text-green-600 hover:text-green-800 font-medium flex items-center space-x-1"
+              >
+                <span>🧑‍⚕️</span>
+                <span>Counsellor Login</span>
+              </Link>
+            </div>
+          </div>
+        </div>
 
       </div>
     </div>

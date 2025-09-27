@@ -1,19 +1,72 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
+
+// Mock data for development/testing
+const mockCounsellors = [
+  {
+    id: 1,
+    name: 'Dr. Sarah Johnson',
+    specialization: 'Clinical Psychology',
+    rating: 4.8,
+    experience: '8 years',
+    profileImage: null,
+  },
+  {
+    id: 2,
+    name: 'Dr. Michael Chen',
+    specialization: 'Academic Counselling',
+    rating: 4.6,
+    experience: '5 years',
+    profileImage: null,
+  },
+  {
+    id: 3,
+    name: 'Dr. Emily Rodriguez',
+    specialization: 'Stress Management',
+    rating: 4.9,
+    experience: '10 years',
+    profileImage: null,
+  },
+];
+
+// Available time slots for each day (9 AM to 6 PM)
+const getAvailableTimeSlots = () => {
+  const slots = [];
+  for (let hour = 9; hour <= 17; hour++) { // 9 AM to 5 PM (last slot at 5 PM for 1-hour session)
+    slots.push({
+      value: hour,
+      label: `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`,
+      display: `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`
+    });
+    // Add 30-minute slots
+    if (hour < 17) { // Don't add 30-minute slot for last hour
+      slots.push({
+        value: hour + 0.5,
+        label: `${hour > 12 ? hour - 12 : hour}:30 ${hour >= 12 ? 'PM' : 'AM'}`,
+        display: `${hour > 12 ? hour - 12 : hour}:30 ${hour >= 12 ? 'PM' : 'AM'}`
+      });
+    }
+  }
+  return slots;
+};
+
+const AVAILABLE_TIME_SLOTS = getAvailableTimeSlots();
 
 const Booking = () => {
   const { t } = useTranslation();
   const { callApi } = useApi();
 
   // State management for the booking flow
-  const [step, setStep] = useState(1); // 1: Select Counsellor, 2: Select Slot, 3: Booking Form
+  const [step, setStep] = useState(1); // 1: Select Counsellor, 2: Select Date & Time, 3: Booking Form
   const [counsellors, setCounsellors] = useState([]);
   const [selectedCounsellor, setSelectedCounsellor] = useState(null);
-  const [availableSlots, setAvailableSlots] = useState([]);
-  const [selectedSlot, setSelectedSlot] = useState(null);
-  const [appointmentMode, setAppointmentMode] = useState('tele');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [selectedDuration, setSelectedDuration] = useState(60); // Default 60 minutes
+  const [appointmentMode, setAppointmentMode] = useState('chat');
   const [appointmentReason, setAppointmentReason] = useState('');
   const [appointmentUrgency, setAppointmentUrgency] = useState('medium');
   const [location, setLocation] = useState('');
@@ -32,35 +85,24 @@ const Booking = () => {
     setError(null);
     
     try {
-      const response = await callApi('/api/v1/counsellors', 'GET');
-      if (response.success) {
-        setCounsellors(response.data || []);
-      } else {
-        setError('Failed to load counsellors. Please try again.');
+      // Try to fetch from API first
+      if (typeof callApi === 'function') {
+        const response = await callApi('/api/v1/counsellors', 'GET');
+        if (response.success && response.data && response.data.length > 0) {
+          setCounsellors(response.data);
+          setLoading(false);
+          return;
+        }
       }
+      
+      // Fallback to mock data
+      console.log('Using mock counsellors data');
+      setCounsellors(mockCounsellors);
     } catch (err) {
       console.error('Error fetching counsellors:', err);
-      setError('Failed to load counsellors. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchAvailableSlots = async (counsellorId) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await callApi(`/api/v1/counsellors/${counsellorId}/slots`, 'GET');
-      if (response.success) {
-        setAvailableSlots(response.data || []);
-        setStep(2);
-      } else {
-        setError('Failed to load available slots. Please try again.');
-      }
-    } catch (err) {
-      console.error('Error fetching slots:', err);
-      setError('Failed to load available slots. Please try again.');
+      // Use mock data as fallback
+      console.log('Falling back to mock counsellors data');
+      setCounsellors(mockCounsellors);
     } finally {
       setLoading(false);
     }
@@ -68,12 +110,13 @@ const Booking = () => {
 
   const handleCounsellorSelect = (counsellor) => {
     setSelectedCounsellor(counsellor);
-    fetchAvailableSlots(counsellor.id);
+    setStep(2); // Move to date/time selection
   };
 
-  const handleSlotSelect = (slot) => {
-    setSelectedSlot(slot);
-    setStep(3);
+  const handleDateTimeSelect = () => {
+    if (selectedDate && selectedTime) {
+      setStep(3);
+    }
   };
 
   const handleBookingSubmit = async (e) => {
@@ -82,11 +125,19 @@ const Booking = () => {
     setError(null);
 
     try {
+      // Create start and end times from selected date and time
+      const [year, month, day] = selectedDate.split('-');
+      const startHour = Math.floor(selectedTime);
+      const startMinutes = (selectedTime % 1) * 60;
+      
+      const startDateTime = new Date(year, month - 1, day, startHour, startMinutes);
+      const endDateTime = new Date(startDateTime.getTime() + selectedDuration * 60 * 1000);
+
       const bookingData = {
         counsellorId: selectedCounsellor.id,
-        slotStart: selectedSlot.startTime,
-        slotEnd: selectedSlot.endTime,
-        mode: appointmentMode,
+        slotStart: startDateTime.toISOString(),
+        slotEnd: endDateTime.toISOString(),
+        mode: appointmentMode === 'in-person' ? 'in-person' : 'tele',
         reason: appointmentReason.trim() || 'General counselling session',
         urgency: appointmentUrgency,
         location: appointmentMode === 'in-person' ? location.trim() : undefined,
@@ -94,14 +145,29 @@ const Booking = () => {
       };
 
       const response = await callApi('/api/v1/appointments', 'POST', bookingData);
+      
       if (response.success) {
+        // Store appointment details for dashboard display
+        const appointmentDetails = {
+          id: response.data._id || Date.now(),
+          counsellor: selectedCounsellor,
+          date: selectedDate,
+          startTime: selectedTime,
+          duration: selectedDuration,
+          mode: appointmentMode,
+          reason: appointmentReason,
+          urgency: appointmentUrgency,
+          location: location,
+          status: response.data.status || 'pending',
+          createdAt: new Date().toISOString()
+        };
+        
+        // Store in localStorage for immediate dashboard access
+        localStorage.setItem('latestAppointment', JSON.stringify(appointmentDetails));
+        
         setBookingSuccess(true);
-        // Reset form after successful booking
-        setTimeout(() => {
-          resetBookingFlow();
-        }, 3000);
       } else {
-        setError(response.message || 'Failed to book appointment. Please try again.');
+        setError(response.error || 'Failed to book appointment. Please try again.');
       }
     } catch (err) {
       console.error('Error creating booking:', err);
@@ -114,9 +180,10 @@ const Booking = () => {
   const resetBookingFlow = () => {
     setStep(1);
     setSelectedCounsellor(null);
-    setAvailableSlots([]);
-    setSelectedSlot(null);
-    setAppointmentMode('tele');
+    setSelectedDate('');
+    setSelectedTime('');
+    setSelectedDuration(60);
+    setAppointmentMode('chat');
     setAppointmentReason('');
     setAppointmentUrgency('medium');
     setLocation('');
@@ -129,10 +196,10 @@ const Booking = () => {
     if (step === 2) {
       setStep(1);
       setSelectedCounsellor(null);
-      setAvailableSlots([]);
+      setSelectedDate('');
+      setSelectedTime('');
     } else if (step === 3) {
       setStep(2);
-      setSelectedSlot(null);
     }
   };
 
@@ -155,25 +222,54 @@ const Booking = () => {
     });
   };
 
-  if (bookingSuccess) {
+  // Get minimum date (tomorrow)
+  const getMinDate = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  };
+
+  // Get maximum date (3 months from now)
+  const getMaxDate = () => {
+    const maxDate = new Date();
+    maxDate.setMonth(maxDate.getMonth() + 3);
+    return maxDate.toISOString().split('T')[0];
+  };
+
+    if (bookingSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md mx-auto">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl shadow-xl p-8 text-center"
-          >
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center"
+        >
+          <div className="mb-6">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('booking.success.title')}</h2>
-            <p className="text-gray-600 mb-6">{t('booking.success.message')}</p>
-            <p className="text-sm text-gray-500">{t('booking.success.autoRedirect')}</p>
-          </motion.div>
-        </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Confirmed!</h2>
+            <p className="text-gray-600 mb-6">
+              Your counselling session has been successfully booked. You'll receive a confirmation email shortly.
+            </p>
+            <div className="space-y-2 mb-6">
+              <Link
+                to="/dashboard"
+                className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-indigo-700 transition-colors block"
+              >
+                View in Dashboard
+              </Link>
+              <button
+                onClick={resetBookingFlow}
+                className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+              >
+                Book Another Session
+              </button>
+            </div>
+          </div>
+        </motion.div>
       </div>
     );
   }
@@ -183,8 +279,40 @@ const Booking = () => {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('booking.title')}</h1>
-          <p className="text-lg text-gray-600">{t('booking.subtitle')}</p>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-2">
+            Counsellor Talk
+          </h1>
+          <p className="text-lg text-gray-600 mb-4">Professional Support System - Direct access to certified counsellors</p>
+          
+          {/* Flow Explanation */}
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 mb-6 border border-green-200 max-w-4xl mx-auto">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center justify-center">
+              <span className="mr-2">👨‍⚕️</span>
+              How Counsellor Talk Works
+            </h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+              <div className="bg-white rounded-lg p-4 text-center">
+                <div className="text-2xl mb-2">📅</div>
+                <div className="font-medium text-gray-900 mb-1">1. Choose Session</div>
+                <div className="text-gray-600">Select chat, video, or offline meet</div>
+              </div>
+              <div className="bg-white rounded-lg p-4 text-center">
+                <div className="text-2xl mb-2">✅</div>
+                <div className="font-medium text-gray-900 mb-1">2. Book & Confirm</div>
+                <div className="text-gray-600">Get confirmation & session link</div>
+              </div>
+              <div className="bg-white rounded-lg p-4 text-center">
+                <div className="text-2xl mb-2">💬</div>
+                <div className="font-medium text-gray-900 mb-1">3. Attend Session</div>
+                <div className="text-gray-600">Meet with certified counsellor</div>
+              </div>
+              <div className="bg-white rounded-lg p-4 text-center">
+                <div className="text-2xl mb-2">📋</div>
+                <div className="font-medium text-gray-900 mb-1">4. Follow-up</div>
+                <div className="text-gray-600">Report sent to admin, further sessions if needed</div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Progress Steps */}
@@ -209,9 +337,9 @@ const Booking = () => {
           </div>
           <div className="flex justify-center mt-2">
             <span className="text-sm text-gray-600">
-              {step === 1 && t('booking.steps.selectCounsellor')}
-              {step === 2 && t('booking.steps.selectSlot')}
-              {step === 3 && t('booking.steps.confirmBooking')}
+              {step === 1 && 'Select a Counsellor'}
+              {step === 2 && 'Choose Date & Time'}
+              {step === 3 && 'Confirm Your Booking'}
             </span>
           </div>
         </div>
@@ -246,7 +374,7 @@ const Booking = () => {
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                {t('common.back')}
+                Back
               </button>
             </div>
           )}
@@ -262,24 +390,30 @@ const Booking = () => {
               />
             )}
 
-            {/* Step 2: Select Slot */}
+            {/* Step 2: Select Date & Time */}
             {step === 2 && selectedCounsellor && (
-              <SlotSelection
+              <DateTimeSelection
                 counsellor={selectedCounsellor}
-                slots={availableSlots}
-                loading={loading}
-                onSelect={handleSlotSelect}
-                formatDate={formatDate}
-                formatTime={formatTime}
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+                selectedTime={selectedTime}
+                setSelectedTime={setSelectedTime}
+                selectedDuration={selectedDuration}
+                setSelectedDuration={setSelectedDuration}
+                onNext={handleDateTimeSelect}
+                getMinDate={getMinDate}
+                getMaxDate={getMaxDate}
                 t={t}
               />
             )}
 
             {/* Step 3: Booking Form */}
-            {step === 3 && selectedCounsellor && selectedSlot && (
+            {step === 3 && selectedCounsellor && selectedDate && selectedTime && (
               <BookingForm
                 counsellor={selectedCounsellor}
-                slot={selectedSlot}
+                selectedDate={selectedDate}
+                selectedTime={selectedTime}
+                selectedDuration={selectedDuration}
                 appointmentMode={appointmentMode}
                 setAppointmentMode={setAppointmentMode}
                 appointmentReason={appointmentReason}
@@ -384,81 +518,163 @@ const CounsellorSelection = ({ counsellors, loading, onSelect, t }) => {
   );
 };
 
-// Slot Selection Component
-const SlotSelection = ({ counsellor, slots, loading, onSelect, formatDate, formatTime, t }) => {
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-        <span className="ml-3 text-gray-600">{t('booking.loading.slots')}</span>
-      </div>
-    );
-  }
-
-  if (slots.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a4 4 0 118 0v4m-4 6v6m-4-6h8m-4-6V3m0 10h.01" />
-        </svg>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">{t('booking.noSlots.title')}</h3>
-        <p className="text-gray-600">{t('booking.noSlots.message')}</p>
-      </div>
-    );
-  }
-
-  // Group slots by date
-  const groupedSlots = slots.reduce((groups, slot) => {
-    const date = formatDate(slot.startTime);
-    if (!groups[date]) {
-      groups[date] = [];
-    }
-    groups[date].push(slot);
-    return groups;
-  }, {});
+// Date and Time Selection Component
+const DateTimeSelection = ({ 
+  counsellor, 
+  selectedDate, 
+  setSelectedDate, 
+  selectedTime, 
+  setSelectedTime,
+  selectedDuration,
+  setSelectedDuration,
+  onNext, 
+  getMinDate, 
+  getMaxDate, 
+  t 
+}) => {
+  const timeSlots = AVAILABLE_TIME_SLOTS;
+  const isFormValid = selectedDate && selectedTime;
 
   return (
-    <div>
+    <div className="space-y-6">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">{t('booking.selectSlot.title')}</h2>
-        <p className="text-gray-600 mt-1">{t('booking.selectSlot.counsellor')}: {counsellor.name}</p>
+        <h2 className="text-xl font-semibold text-gray-900">Choose Date & Time</h2>
+        <p className="text-gray-600 mt-1">Counsellor: {counsellor.name}</p>
       </div>
 
-      <div className="space-y-6">
-        {Object.entries(groupedSlots).map(([date, dateSlots]) => (
-          <div key={date}>
-            <h3 className="text-lg font-medium text-gray-900 mb-3">{date}</h3>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {dateSlots.map((slot) => (
-                <motion.button
-                  key={slot.id}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => onSelect(slot)}
-                  className="border border-gray-200 rounded-lg p-4 text-left hover:border-indigo-300 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">{slot.duration} {t('booking.minutes')}</p>
-                      {slot.type && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-2">
-                          {slot.type}
-                        </span>
-                      )}
-                    </div>
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </motion.button>
-              ))}
+      {/* Date Selection */}
+      <div>
+        <label htmlFor="appointment-date" className="block text-sm font-medium text-gray-700 mb-3">
+          Select Date <span className="text-red-500">*</span>
+        </label>
+        <div className="relative">
+          <input
+            id="appointment-date"
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            min={getMinDate()}
+            max={getMaxDate()}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-lg"
+            required
+          />
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a4 4 0 118 0v4m-4 6v6m-4-6h8m-4-6V3m0 10h.01" />
+            </svg>
+          </div>
+        </div>
+        <p className="text-xs text-gray-500 mt-1">
+          You can book appointments from tomorrow up to 3 months in advance.
+        </p>
+      </div>
+
+      {/* Time Selection */}
+      <div>
+        <label htmlFor="appointment-time" className="block text-sm font-medium text-gray-700 mb-3">
+          Select Time <span className="text-red-500">*</span>
+        </label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          {timeSlots.map((slot) => (
+            <motion.button
+              key={slot.value}
+              type="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setSelectedTime(slot.value)}
+              className={`p-3 rounded-lg border-2 text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                selectedTime === slot.value
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-indigo-300 hover:bg-indigo-50'
+              }`}
+            >
+              {slot.display}
+            </motion.button>
+          ))}
+        </div>
+        <p className="text-xs text-gray-500 mt-2">
+          Available time slots: 9:00 AM to 6:00 PM (30-minute intervals)
+        </p>
+      </div>
+
+      {/* Duration Selection */}
+      <div>
+        <label htmlFor="session-duration" className="block text-sm font-medium text-gray-700 mb-3">
+          Session Duration
+        </label>
+        <select
+          id="session-duration"
+          value={selectedDuration}
+          onChange={(e) => setSelectedDuration(parseInt(e.target.value))}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+        >
+          <option value={30}>30 minutes</option>
+          <option value={60}>60 minutes (Recommended)</option>
+          <option value={90}>90 minutes</option>
+        </select>
+      </div>
+
+      {/* Selected Date and Time Summary */}
+      {selectedDate && selectedTime && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-green-50 border border-green-200 rounded-lg p-4"
+        >
+          <h4 className="font-medium text-green-900 mb-2">Selected Appointment</h4>
+          <div className="space-y-1 text-sm text-green-800">
+            <div className="flex justify-between">
+              <span>Date:</span>
+              <span className="font-medium">
+                {new Date(selectedDate).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>Time:</span>
+              <span className="font-medium">
+                {timeSlots.find(slot => slot.value === selectedTime)?.display}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>Duration:</span>
+              <span className="font-medium">{selectedDuration} minutes</span>
+            </div>
+            <div className="flex justify-between">
+              <span>End Time:</span>
+              <span className="font-medium">
+                {AVAILABLE_TIME_SLOTS.find(slot => slot.value === selectedTime + (selectedDuration / 60))?.display || 
+                 `${Math.floor(selectedTime + (selectedDuration / 60)) > 12 ? 
+                   Math.floor(selectedTime + (selectedDuration / 60)) - 12 : 
+                   Math.floor(selectedTime + (selectedDuration / 60))}:${
+                   ((selectedTime + (selectedDuration / 60)) % 1) * 60 === 0 ? '00' : 
+                   ((selectedTime + (selectedDuration / 60)) % 1) * 60
+                 } ${Math.floor(selectedTime + (selectedDuration / 60)) >= 12 ? 'PM' : 'AM'}`
+                }
+              </span>
             </div>
           </div>
-        ))}
-      </div>
+        </motion.div>
+      )}
+
+      {/* Continue Button */}
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={onNext}
+        disabled={!isFormValid}
+        className={`w-full py-3 px-4 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
+          isFormValid
+            ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+        }`}
+      >
+        Continue to Booking Details
+      </motion.button>
     </div>
   );
 };
@@ -466,7 +682,9 @@ const SlotSelection = ({ counsellor, slots, loading, onSelect, formatDate, forma
 // Booking Form Component
 const BookingForm = ({ 
   counsellor, 
-  slot, 
+  selectedDate,
+  selectedTime,
+  selectedDuration,
   appointmentMode, 
   setAppointmentMode,
   appointmentReason,
@@ -505,50 +723,90 @@ const BookingForm = ({
       
       {/* Booking Summary */}
       <div className="bg-gray-50 rounded-lg p-4 mb-6">
-        <h3 className="font-medium text-gray-900 mb-3">{t('booking.summary.title')}</h3>
+        <h3 className="font-medium text-gray-900 mb-3">Booking Summary</h3>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-gray-600">{t('booking.summary.counsellor')}:</span>
+            <span className="text-gray-600">Counsellor:</span>
             <span className="font-medium">{counsellor.name}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">{t('booking.summary.date')}:</span>
-            <span className="font-medium">{formatDate(slot.startTime)}</span>
+            <span className="text-gray-600">Date:</span>
+            <span className="font-medium">
+              {new Date(selectedDate).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">{t('booking.summary.time')}:</span>
-            <span className="font-medium">{formatTime(slot.startTime)} - {formatTime(slot.endTime)}</span>
+            <span className="text-gray-600">Start Time:</span>
+            <span className="font-medium">
+              {AVAILABLE_TIME_SLOTS.find(slot => slot.value === selectedTime)?.display}
+            </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">{t('booking.summary.duration')}:</span>
-            <span className="font-medium">{slot.duration} {t('booking.minutes')}</span>
+            <span className="text-gray-600">Duration:</span>
+            <span className="font-medium">{selectedDuration} minutes</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">End Time:</span>
+            <span className="font-medium">
+              {AVAILABLE_TIME_SLOTS.find(slot => slot.value === selectedTime + (selectedDuration / 60))?.display || 
+               `${Math.floor(selectedTime + (selectedDuration / 60)) > 12 ? 
+                 Math.floor(selectedTime + (selectedDuration / 60)) - 12 : 
+                 Math.floor(selectedTime + (selectedDuration / 60))}:${
+                 ((selectedTime + (selectedDuration / 60)) % 1) * 60 === 0 ? '00' : 
+                 ((selectedTime + (selectedDuration / 60)) % 1) * 60
+               } ${Math.floor(selectedTime + (selectedDuration / 60)) >= 12 ? 'PM' : 'AM'}`
+              }
+            </span>
           </div>
         </div>
       </div>
 
       {/* Booking Details Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Appointment Mode */}
+        {/* Session Type Selection */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
-            Appointment Mode <span className="text-red-500">*</span>
+            Session Type <span className="text-red-500">*</span>
           </label>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <label className={`border-2 p-4 rounded-lg cursor-pointer transition-colors ${
-              appointmentMode === 'tele' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 hover:border-gray-400'
+              appointmentMode === 'chat' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 hover:border-gray-400'
             }`}>
               <input
                 type="radio"
                 name="appointmentMode"
-                value="tele"
-                checked={appointmentMode === 'tele'}
+                value="chat"
+                checked={appointmentMode === 'chat'}
                 onChange={(e) => setAppointmentMode(e.target.value)}
                 className="sr-only"
               />
               <div className="text-center">
-                <div className="text-2xl mb-2">💻</div>
-                <div className="font-medium">Online Session</div>
-                <div className="text-sm text-gray-600">Video call consultation</div>
+                <div className="text-2xl mb-2">�</div>
+                <div className="font-medium">Online Chat</div>
+                <div className="text-sm text-gray-600">Text-based counselling session</div>
+              </div>
+            </label>
+
+            <label className={`border-2 p-4 rounded-lg cursor-pointer transition-colors ${
+              appointmentMode === 'video' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 hover:border-gray-400'
+            }`}>
+              <input
+                type="radio"
+                name="appointmentMode"
+                value="video"
+                checked={appointmentMode === 'video'}
+                onChange={(e) => setAppointmentMode(e.target.value)}
+                className="sr-only"
+              />
+              <div className="text-center">
+                <div className="text-2xl mb-2">📹</div>
+                <div className="font-medium">Video Call</div>
+                <div className="text-sm text-gray-600">Face-to-face video consultation</div>
               </div>
             </label>
             
@@ -565,8 +823,8 @@ const BookingForm = ({
               />
               <div className="text-center">
                 <div className="text-2xl mb-2">🏢</div>
-                <div className="font-medium">In-Person</div>
-                <div className="text-sm text-gray-600">Face-to-face meeting</div>
+                <div className="font-medium">Offline Meet</div>
+                <div className="text-sm text-gray-600">On-campus face-to-face meeting</div>
               </div>
             </label>
           </div>
@@ -645,6 +903,37 @@ const BookingForm = ({
           <p className="text-xs text-gray-500 mt-1">{privateNotes.length}/2000 characters</p>
         </div>
 
+        {/* What Happens Next */}
+        <div className="bg-blue-50 rounded-lg p-4 mb-6">
+          <h4 className="font-medium text-blue-900 mb-2">What happens next?</h4>
+          <div className="space-y-2 text-sm text-blue-800">
+            <div className="flex items-start space-x-2">
+              <span className="font-medium">1.</span>
+              <span>Your booking request will be sent to the counsellor</span>
+            </div>
+            <div className="flex items-start space-x-2">
+              <span className="font-medium">2.</span>
+              <span>You'll receive a confirmation email/notification within 30 minutes</span>
+            </div>
+            <div className="flex items-start space-x-2">
+              <span className="font-medium">3.</span>
+              <span>
+                {appointmentMode === 'chat' && 'You\'ll get a secure chat link to join the session'}
+                {appointmentMode === 'video' && 'You\'ll receive a video call link for your session'}
+                {appointmentMode === 'in-person' && 'Meeting location details will be confirmed'}
+              </span>
+            </div>
+            <div className="flex items-start space-x-2">
+              <span className="font-medium">4.</span>
+              <span>The counsellor will prepare for your session based on your notes</span>
+            </div>
+            <div className="flex items-start space-x-2">
+              <span className="font-medium">5.</span>
+              <span>After the session, a summary report will be sent to the admin dashboard (confidentially)</span>
+            </div>
+          </div>
+        </div>
+
         <div className="flex space-x-4">
           <motion.button
             whileHover={{ scale: 1.02 }}
@@ -672,4 +961,4 @@ const BookingForm = ({
   );
 };
 
-export default Booking
+export default Booking;

@@ -285,13 +285,17 @@ const createScreening = async (req, res, next) => {
         
         // Get user information for the alert
         let userName = 'Anonymous User';
+        let anonymousDisplayName = 'Anonymous User';
+        let realName = null;
         let userEmail = null;
         let collegeId = null;
         
         if (validatedStudentId) {
-          const student = await User.findById(validatedStudentId).select('name email collegeId');
+          const student = await User.findById(validatedStudentId).select('name email collegeId anonymousDisplayName');
           if (student) {
-            userName = student.name;
+            userName = student.anonymousDisplayName || 'Anonymous User'; // Public display
+            anonymousDisplayName = student.anonymousDisplayName || 'Anonymous User';
+            realName = student.name; // Admin-only for identity tracking
             userEmail = student.email;
             collegeId = student.collegeId;
           }
@@ -299,7 +303,9 @@ const createScreening = async (req, res, next) => {
 
         const alertData = {
           userId: validatedStudentId,
-          userName,
+          userName, // Anonymous display name for public display
+          realName, // Real name for admin tracking only
+          anonymousDisplayName,
           userEmail,
           collegeId,
           source: 'screening',

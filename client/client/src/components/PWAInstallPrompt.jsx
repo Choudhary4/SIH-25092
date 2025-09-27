@@ -171,7 +171,7 @@ const PWAInstallPrompt = () => {
                 
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
-                    Install MindCare App
+                    Install Mann-Mitra App
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
                     Install our app for faster access, offline support, and better experience.
@@ -229,7 +229,7 @@ const PWAInstallPrompt = () => {
                     Update Available
                   </h3>
                   <p className="text-sm text-green-700 dark:text-green-300 mb-3">
-                    A new version of MindCare is available with improvements and bug fixes.
+                    A new version of Mann-Mitra is available with improvements and bug fixes.
                   </p>
                   
                   <button

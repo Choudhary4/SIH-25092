@@ -1,141 +1,137 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { FiUser, FiLogIn, FiMessageSquare, FiBookOpen, FiUsers, FiHelpCircle, FiGlobe } from 'react-icons/fi'
 import LanguageSwitcher from './common/LanguageSwitcher'
+import logoImage from '../assets/Mann-mitra.png'
+
+const navItems = [
+  {
+    path: '/chat',
+    label: 'Buddy',
+    icon: <FiMessageSquare />
+  },
+  {
+    path: '/booking',
+    label: 'Counsellor Talk',
+    icon: <FiHelpCircle />
+  },
+  {
+    path: '/forum',
+    label: 'Peer Talk',
+    icon: <FiUsers />
+  },
+  {
+    path: '/resources',
+    label: 'Resource Hub',
+    icon: <FiBookOpen />
+  },
+  {
+    path: '/about',
+    label: 'About',
+    icon: <FiGlobe />
+  }
+]
 
 const Header = () => {
   const { t } = useTranslation()
   const location = useLocation()
+  const navigate = useNavigate()
   const { user, isAuthenticated, logout } = useAuth()
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
-  const navItems = [
-    { path: '/', label: t('nav.home'), key: 'home' },
-    { path: '/screening', label: t('nav.screening'), key: 'screening' },
-    { path: '/chat', label: t('nav.chat'), key: 'chat' },
-    { path: '/booking', label: t('nav.booking'), key: 'booking' },
-    { path: '/forum', label: t('nav.forum'), key: 'forum' },
-    ...(isAuthenticated ? [{ path: '/moderator', label: 'Moderator', key: 'moderator' }] : []),
-    { path: '/admin', label: t('nav.admin'), key: 'admin' },
-    ...(isAuthenticated ? [{ path: '/admin/dashboard', label: 'Dashboard', key: 'dashboard' }] : [])
-  ]
-
-  const isActivePath = (path) => {
-    return location.pathname === path
-  }
+  const isActivePath = (path) => location.pathname.startsWith(path)
 
   return (
     <header className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
         <div className="flex items-center justify-between h-16">
-          {/* Logo/Brand */}
+
+          {/* Logo as Home Link */}
           <Link to="/" className="flex items-center space-x-3 flex-shrink-0">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-lg">M</span>
-            </div>
-            <span className="text-2xl font-bold text-gray-900 hidden sm:block">MindCare</span>
+            <img 
+              src={logoImage} 
+              alt="Mann-Mitra Logo" 
+              className="h-32 w-auto cursor-pointer hover:opacity-80 transition-opacity"
+            />
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-1">
+          {/* Navbar links */}
+          <nav className="flex flex-1 items-center space-x-1 ml-6">
             {navItems.map((item) => (
               <Link
-                key={item.key}
+                key={item.path}
                 to={item.path}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActivePath(item.path)
-                    ? 'bg-blue-100 text-blue-700 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
+                className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                  ${isActivePath(item.path)
+                    ? 'bg-teal-100 text-teal-700 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}
+                  `}
               >
-                {item.label}
+                {item.icon}
+                <span className="hidden sm:inline">{item.label}</span>
               </Link>
             ))}
           </nav>
 
-          {/* User menu or auth buttons */}
-          <div className="flex items-center space-x-4">
-            {/* Language Switcher */}
-            <LanguageSwitcher />
-            
+          {/* Right side – profile menu and toggler */}
+          <div className="flex items-center space-x-1">
+
             {isAuthenticated ? (
               <div className="relative">
                 <button
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center space-x-2 p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                  className="flex items-center space-x-2 px-3 py-2 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  onClick={() => setIsDropdownOpen((open) => !open)}
+                  aria-label="User menu"
+                  aria-expanded={isDropdownOpen}
                 >
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-medium text-sm">
-                      {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                    </span>
-                  </div>
-                  <span className="hidden md:block font-medium">
-                    {user?.firstName || 'User'}
-                  </span>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                  <FiUser className="w-6 h-6" />
+                  <span className="hidden md:block">{user?.anonymousDisplayName || 'User'}</span>
                 </button>
-
-                {/* User dropdown menu */}
-                {isUserMenuOpen && (
+                {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                    <div className="px-4 py-2 border-b border-gray-200">
-                      <p className="text-sm font-medium text-gray-900">{user?.firstName} {user?.lastName}</p>
-                      <p className="text-sm text-gray-500">{user?.email}</p>
-                    </div>
-                    <Link
-                      to="/profile"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setIsUserMenuOpen(false)}
-                    >
-                      Profile Settings
-                    </Link>
-                    <Link
-                      to="/appointments"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setIsUserMenuOpen(false)}
-                    >
-                      My Appointments
-                    </Link>
                     <button
+                      className="flex items-center px-4 py-2 w-full text-left text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                       onClick={() => {
-                        logout()
-                        setIsUserMenuOpen(false)
+                        setIsDropdownOpen(false)
+                        navigate('/dashboard')
                       }}
-                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                     >
-                      {t('auth.logout')}
+                      <FiUser className="mr-2" />
+                      <span>Dashboard</span>
+                    </button>
+                    <button
+                      className="flex items-center px-4 py-2 w-full text-left text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                      onClick={() => {
+                        setIsDropdownOpen(false)
+                        logout()
+                      }}
+                    >
+                      <FiLogIn className="mr-2" />
+                      <span>{t('auth.logout')}</span>
                     </button>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="hidden lg:flex items-center space-x-4">
-                <Link
-                  to="/login"
-                  className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors"
-                >
-                  {t('auth.login')}
-                </Link>
-                <Link
-                  to="/register"
-                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200"
-                >
-                  {t('auth.signup')}
-                </Link>
-              </div>
+              <button
+                className="flex items-center px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+                onClick={() => navigate('/login')}
+              >
+                <FiLogIn className="mr-2" />
+                <span>{t('auth.login')}</span>
+              </button>
             )}
 
-            {/* Mobile menu button */}
-            <button 
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            <button
+              onClick={() => setIsMenuOpen((open) => !open)}
+              className="lg:hidden p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors ml-2"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {isMobileMenuOpen ? (
+                {isMenuOpen ? (
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 ) : (
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -145,86 +141,52 @@ const Header = () => {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
-        {isMobileMenuOpen && (
-          <div className="lg:hidden border-t border-gray-200 py-4">
-            <nav className="space-y-2">
-              {navItems.map((item) => (
-                <Link
-                  key={item.key}
-                  to={item.path}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`block px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 ${
-                    isActivePath(item.path)
-                      ? 'bg-blue-100 text-blue-700 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
-              
-              {/* Mobile auth buttons */}
-              {!isAuthenticated && (
-                <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
-                  <Link
-                    to="/login"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block px-4 py-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg font-medium transition-all duration-200"
-                  >
-                    {t('auth.login')}
-                  </Link>
-                  <Link
-                    to="/register"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 text-center"
-                  >
-                    {t('auth.signup')}
-                  </Link>
-                </div>
-              )}
-
-              {/* Mobile Language Switch */}
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="px-4 py-2">
-                  <LanguageSwitcher className="w-full" />
-                </div>
-              </div>
-
-              {/* Mobile user menu */}
-              {isAuthenticated && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <div className="px-4 py-2 mb-2">
-                    <p className="text-sm font-medium text-gray-900">{user?.firstName} {user?.lastName}</p>
-                    <p className="text-sm text-gray-500">{user?.email}</p>
-                  </div>
-                  <Link
-                    to="/profile"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block px-4 py-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200"
-                  >
-                    Profile Settings
-                  </Link>
-                  <Link
-                    to="/appointments"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block px-4 py-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200"
-                  >
-                    My Appointments
-                  </Link>
-                  <button
-                    onClick={() => {
-                      logout()
-                      setIsMobileMenuOpen(false)
-                    }}
-                    className="block w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                  >
-                    {t('auth.logout')}
-                  </button>
-                </div>
-              )}
-            </nav>
-          </div>
+        {/* MOBILE NAV */}
+        {isMenuOpen && (
+          <nav className="lg:hidden border-t border-gray-200 py-4 space-y-2">
+            {navItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={() => setIsMenuOpen(false)}
+                className={`flex items-center space-x-2 px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 ${
+                  isActivePath(item.path)
+                    ? 'bg-teal-100 text-teal-700 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </Link>
+            ))}
+            {!isAuthenticated && (
+              <button
+                className="flex items-center px-4 py-3 w-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+                onClick={() => {
+                  setIsMenuOpen(false)
+                  navigate('/about')
+                }}
+              >
+                <FiHelpCircle className="mr-2" />
+                <span>{t('nav.about')}</span>
+              </button>
+            )}
+            <div className="px-4 py-2">
+              <LanguageSwitcher />
+            </div>
+            {!isAuthenticated && (
+              <button
+                className="flex items-center px-4 py-3 w-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+                onClick={() => {
+                  setIsMenuOpen(false)
+                  navigate('/login')
+                }}
+              >
+                <FiLogIn className="mr-2" />
+                <span>{t('auth.login')}</span>
+              </button>
+            )}
+          </nav>
         )}
       </div>
     </header>

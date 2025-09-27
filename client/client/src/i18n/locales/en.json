@@ -6,7 +6,12 @@
     "booking": "Book Appointment",
     "forum": "Community Forum",
     "admin": "Admin Dashboard",
-    "moderator": "Moderator"
+    "moderator": "Moderator",
+    "buddy": "Buddy",
+    "resources": "Resources",
+    "counsellorTalk": "Counsellor Talk",
+    "peerTalk": "Peer Talk",
+    "about": "About"
   },
   "common": {
     "loading": "Loading...",
@@ -62,7 +67,7 @@
     "submitted": "Successfully submitted!"
   },
   "home": {
-    "welcome": "Welcome to MindCare Platform",
+    "welcome": "Welcome to Mann-Mitra Platform",
     "subtitle": "Your journey to better mental health starts here",
     "getStarted": "Get Started",
     "features": {
@@ -212,7 +217,18 @@
       "regenerate": "Regenerate Response",
       "copy": "Copy Message",
       "share": "Share Conversation",
-      "report": "Report Issue"
+      "report": "Report Issue",
+      "feeling_good": "I'm feeling good",
+      "feeling_stressed": "I'm feeling stressed",
+      "feeling_anxious": "I'm feeling anxious",
+      "voice_mode": "Switch to voice mode",
+      "breathing_exercise": "Start breathing exercise",
+      "grounding_technique": "Try grounding technique",
+      "crisis_escalation": "I need immediate help",
+      "book_counsellor": "Book counsellor session",
+      "grounding_5things": "5 things I can see",
+      "grounding_4things": "4 things I can touch",
+      "grounding_3things": "3 things I can hear"
     },
     "status": {
       "connecting": "Connecting...",
@@ -225,6 +241,20 @@
       "messageFailed": "Failed to send message",
       "loadHistoryFailed": "Failed to load chat history",
       "voiceNotSupported": "Voice input is not supported in your browser"
+    },
+    "connectionError": "Connection error occurred. Please try again.",
+    "sendError": "Failed to send message. Please try again.",
+    "connectionLost": "Connection lost. Trying to reconnect...",
+    "system": "System",
+    "aiAssistant": "AI Assistant",
+    "counselorContacted": "A counselor has been notified and will contact you shortly.",
+    "breathingExercise": {
+      "instruction": "Let's try a breathing exercise to help you feel better. Follow the rhythm below:",
+      "steps": "Breathe in slowly, hold, then breathe out",
+      "cycle": "Inhale (4s) → Hold (4s) → Exhale (6s) → Repeat"
+    },
+    "grounding": {
+      "instruction": "Let's try a grounding technique to help you feel more centered. This technique helps you focus on the present moment."
     }
   },
   "booking": {
@@ -238,7 +268,39 @@
     "notes": "Additional Notes",
     "notesPlaceholder": "Any specific concerns or topics you'd like to discuss...",
     "bookAppointment": "Book Appointment",
-    "confirmBooking": "Confirm Booking",
+    "selectCounsellor": {
+      "title": "Select a Counsellor"
+    },
+    "selectSlot": {
+      "title": "Choose Available Time Slot",
+      "counsellor": "Counsellor"
+    },
+    "confirmBooking": {
+      "title": "Confirm Your Booking",
+      "button": "Confirm Booking"
+    },
+    "summary": {
+      "title": "Booking Summary",
+      "counsellor": "Counsellor",
+      "date": "Date",
+      "time": "Time",
+      "duration": "Duration"
+    },
+    "loading": {
+      "counsellors": "Loading counsellors...",
+      "slots": "Loading available slots..."
+    },
+    "noCounsellors": {
+      "title": "No Counsellors Available",
+      "message": "There are currently no counsellors available. Please try again later."
+    },
+    "noSlots": {
+      "title": "No Available Slots",
+      "message": "There are no available time slots for this counsellor. Please try selecting a different counsellor."
+    },
+    "minutes": "minutes",
+    "yearsExperience": "years experience",
+    "confirming": "Confirming booking...",
     "types": {
       "consultation": "Initial Consultation",
       "therapy": "Therapy Session",

@@ -1,16 +1,26 @@
 const express = require('express');
-const { query } = require('express-validator');
+const { query, body } = require('express-validator');
 const {
   getAdminOverview,
   getUserAnalytics,
-  getCrisisDashboard
+  getCrisisDashboard,
+  createCounsellor,
+  getCounsellors,
+  getCounsellor,
+  updateCounsellor,
+  toggleCounsellorStatus,
+  deleteCounsellor,
+  resetCounsellorPassword
 } = require('../controllers/admin.controller');
 const { protect, authorize } = require('../middlewares/auth.middleware');
-const { createCustomRateLimit } = require('../middlewares/rateLimit');
+const { createCustomRateLimit, sensitiveRateLimit } = require('../middlewares/rateLimit');
 
 const router = express.Router();
 
-// Rate limiting for admin operations (higher limits for dashboard usage)
+// Rate limiting strategy:
+// - adminRateLimit: 500 requests per 15 minutes for most admin operations (create, read, update)
+// - sensitiveRateLimit: 10 requests per hour for sensitive operations (delete, reset password, toggle status)
+// - analyticsRateLimit: 100 requests per 5 minutes for dashboard analytics
 const adminRateLimit = createCustomRateLimit(500, 15 * 60 * 1000); // 500 requests per 15 minutes for admins
 const analyticsRateLimit = createCustomRateLimit(100, 5 * 60 * 1000); // 100 analytics requests per 5 minutes
 
@@ -333,6 +343,156 @@ router.get(
       });
     }
   }
+);
+
+// Counsellor management routes
+// @route   POST /api/v1/admin/counsellors
+// @desc    Create new counsellor account
+// @access  Private (admin only)
+router.post(
+  '/counsellors',
+  adminRateLimit,
+  [
+    body('name')
+      .trim()
+      .isLength({ min: 2, max: 50 })
+      .withMessage('Name must be between 2 and 50 characters'),
+    body('email')
+      .isEmail()
+      .normalizeEmail()
+      .withMessage('Please provide a valid email address'),
+    body('department')
+      .optional()
+      .trim()
+      .isLength({ max: 100 })
+      .withMessage('Department must not exceed 100 characters'),
+    body('specialization')
+      .optional()
+      .trim()
+      .isLength({ max: 200 })
+      .withMessage('Specialization must not exceed 200 characters'),
+    body('experience')
+      .optional()
+      .isInt({ min: 0 })
+      .withMessage('Experience must be a positive number'),
+    body('password')
+      .isLength({ min: 6 })
+      .withMessage('Password must be at least 6 characters long')
+  ],
+  createCounsellor
+);
+
+// @route   GET /api/v1/admin/counsellors
+// @desc    Get all counsellors for admin management
+// @access  Private (admin only)
+router.get(
+  '/counsellors',
+  adminRateLimit,
+  [
+    query('page')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('Page must be a positive integer'),
+    query('limit')
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage('Limit must be between 1 and 100'),
+    query('status')
+      .optional()
+      .isIn(['active', 'inactive'])
+      .withMessage('Status must be active or inactive'),
+    query('department')
+      .optional()
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage('Department filter cannot be empty'),
+    query('search')
+      .optional()
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage('Search query must not be empty')
+  ],
+  getCounsellors
+);
+
+// @route   GET /api/v1/admin/counsellors/:id
+// @desc    Get single counsellor details
+// @access  Private (admin only)
+router.get(
+  '/counsellors/:id',
+  adminRateLimit,
+  getCounsellor
+);
+
+// @route   PUT /api/v1/admin/counsellors/:id
+// @desc    Update counsellor details and availability
+// @access  Private (admin only)
+router.put(
+  '/counsellors/:id',
+  adminRateLimit,
+  [
+    body('name')
+      .optional()
+      .trim()
+      .isLength({ min: 2, max: 50 })
+      .withMessage('Name must be between 2 and 50 characters'),
+    body('department')
+      .optional()
+      .trim()
+      .isLength({ max: 100 })
+      .withMessage('Department must not exceed 100 characters'),
+    body('specialization')
+      .optional()
+      .trim()
+      .isLength({ max: 200 })
+      .withMessage('Specialization must not exceed 200 characters'),
+    body('experience')
+      .optional()
+      .isInt({ min: 0 })
+      .withMessage('Experience must be a positive number'),
+    body('isActive')
+      .optional()
+      .isBoolean()
+      .withMessage('isActive must be a boolean value')
+  ],
+  updateCounsellor
+);
+
+// @route   PATCH /api/v1/admin/counsellors/:id/status
+// @desc    Activate/Deactivate counsellor
+// @access  Private (admin only)
+router.patch(
+  '/counsellors/:id/status',
+  sensitiveRateLimit, // Use sensitive rate limit for status changes
+  [
+    body('isActive')
+      .isBoolean()
+      .withMessage('isActive must be a boolean value')
+  ],
+  toggleCounsellorStatus
+);
+
+// @route   DELETE /api/v1/admin/counsellors/:id
+// @desc    Delete counsellor (soft delete)
+// @access  Private (admin only)
+router.delete(
+  '/counsellors/:id',
+  sensitiveRateLimit, // Use sensitive rate limit for delete operations
+  deleteCounsellor
+);
+
+// @route   POST /api/v1/admin/counsellors/:id/reset-password
+// @desc    Reset counsellor password
+// @access  Private (admin only)
+router.post(
+  '/counsellors/:id/reset-password',
+  sensitiveRateLimit, // Use sensitive rate limit for password reset operations
+  [
+    body('newPassword')
+      .isLength({ min: 6 })
+      .withMessage('New password must be at least 6 characters long')
+  ],
+  resetCounsellorPassword
 );
 
 module.exports = router;

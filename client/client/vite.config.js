@@ -144,8 +144,8 @@ export default defineConfig({
       
       // Manifest configuration
       manifest: {
-        name: 'MindCare - Mental Health Platform',
-        short_name: 'MindCare',
+        name: 'Mann-Mitra - Mental Health Platform',
+        short_name: 'Mann-Mitra',
         description: 'Comprehensive mental health support platform with AI assistance, professional booking, and community forum',
         theme_color: '#4F46E5',
         background_color: '#F8FAFC',
@@ -262,7 +262,14 @@ export default defineConfig({
   // Server configuration for development
   server: {
     port: 3000,
-    open: true
+    open: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false
+      }
+    }
   },
   
   // Preview configuration

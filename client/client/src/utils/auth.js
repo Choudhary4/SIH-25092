@@ -3,9 +3,9 @@
  * Handles both localStorage (fallback) and secure httpOnly cookies (when available)
  */
 
-const TOKEN_KEY = 'mindcare_token'
-const USER_KEY = 'mindcare_user'
-const REFRESH_TOKEN_KEY = 'mindcare_refresh_token'
+const TOKEN_KEY = 'MannMitra_token'
+const USER_KEY = 'MannMitra_user'
+const REFRESH_TOKEN_KEY = 'MannMitra_refresh_token'
 
 // Check if we're in a secure context (HTTPS)
 const isSecureContext = () => {
@@ -80,7 +80,7 @@ export const tokenStorage = {
     } catch (error) {
       console.error('Error storing token:', error)
       // Fallback to memory storage if all else fails
-      window._mindcareToken = token
+      window._MannMitraToken = token
     }
   },
 
@@ -103,7 +103,7 @@ export const tokenStorage = {
       }
 
       // Last resort: memory storage
-      return window._mindcareToken || null
+      return window._MannMitraToken || null
     } catch (error) {
       console.error('Error retrieving token:', error)
       return null
@@ -117,7 +117,7 @@ export const tokenStorage = {
     try {
       cookieUtils.remove(TOKEN_KEY)
       localStorage.removeItem(TOKEN_KEY)
-      delete window._mindcareToken
+      delete window._MannMitraToken
     } catch (error) {
       console.error('Error removing token:', error)
     }
@@ -186,7 +186,7 @@ export const userStorage = {
     } catch (error) {
       console.error('Error storing user data:', error)
       // Fallback to memory storage
-      window._mindcareUser = user
+      window._MannMitraUser = user
     }
   },
 
@@ -200,7 +200,7 @@ export const userStorage = {
       if (userData) {
         return JSON.parse(userData)
       }
-      return window._mindcareUser || null
+      return window._MannMitraUser || null
     } catch (error) {
       console.error('Error retrieving user data:', error)
       return null
@@ -213,7 +213,7 @@ export const userStorage = {
   removeUser: () => {
     try {
       localStorage.removeItem(USER_KEY)
-      delete window._mindcareUser
+      delete window._MannMitraUser
     } catch (error) {
       console.error('Error removing user data:', error)
     }

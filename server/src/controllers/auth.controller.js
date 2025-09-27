@@ -36,6 +36,7 @@ const sendTokenResponse = (user, statusCode, res, message) => {
         id: user._id,
         email: user.email,
         name: user.name,
+        anonymousDisplayName: user.anonymousDisplayName,
         collegeId: user.collegeId,
         role: user.role,
         languagePref: user.languagePref,
@@ -44,7 +45,7 @@ const sendTokenResponse = (user, statusCode, res, message) => {
     });
 };
 
-// @desc    Register user
+// @desc    Register user (students only)
 // @route   POST /api/v1/auth/register
 // @access  Public
 const register = async (req, res, next) => {
@@ -59,7 +60,10 @@ const register = async (req, res, next) => {
       });
     }
 
-    const { email, password, name, collegeId, role, languagePref } = req.body;
+    const { email, password, name, collegeId, languagePref } = req.body;
+
+    // Only allow student registration through public route
+    const role = 'student';
 
     // Check if user already exists
     let existingUser = await User.findByEmail(email);
@@ -76,14 +80,14 @@ const register = async (req, res, next) => {
       passwordHash: password, // Will be hashed by pre-save hook
       name,
       collegeId,
-      role: role || 'student',
+      role,
       languagePref: languagePref || 'en'
     });
 
     // Update last login
     await user.updateLastLogin();
 
-    sendTokenResponse(user, 201, res, 'User registered successfully');
+    sendTokenResponse(user, 201, res, 'Student registered successfully');
 
   } catch (error) {
     console.error('Register error:', error);
@@ -110,6 +114,196 @@ const register = async (req, res, next) => {
     res.status(500).json({
       success: false,
       message: 'Server error during registration'
+    });
+  }
+};
+
+// @desc    Admin login (separate from student/counsellor login)
+// @route   POST /api/v1/auth/admin/login
+// @access  Public
+const adminLogin = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { email, password } = req.body;
+
+    // Check if admin exists
+    const user = await User.findByEmail(email).select('+passwordHash');
+    if (!user || user.role !== 'admin') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid admin credentials'
+      });
+    }
+
+    // Check if admin is active
+    if (!user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Admin account has been deactivated'
+      });
+    }
+
+    // Check password
+    const isPasswordMatch = await user.comparePassword(password);
+    if (!isPasswordMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid admin credentials'
+      });
+    }
+
+    // Update last login
+    await user.updateLastLogin();
+
+    sendTokenResponse(user, 200, res, 'Admin logged in successfully');
+
+  } catch (error) {
+    console.error('Admin login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during admin login'
+    });
+  }
+};
+
+// @desc    Counsellor login (separate from student login)
+// @route   POST /api/v1/auth/counsellor/login
+// @access  Public
+const counsellorLogin = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { email, password } = req.body;
+
+    // Check if counsellor exists
+    const user = await User.findByEmail(email).select('+passwordHash');
+    if (!user || user.role !== 'counsellor') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid counsellor credentials'
+      });
+    }
+
+    // Check if counsellor is active
+    if (!user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Counsellor account has been deactivated'
+      });
+    }
+
+    // Check password
+    const isPasswordMatch = await user.comparePassword(password);
+    if (!isPasswordMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid counsellor credentials'
+      });
+    }
+
+    // Update last login
+    await user.updateLastLogin();
+
+    sendTokenResponse(user, 200, res, 'Counsellor logged in successfully');
+
+  } catch (error) {
+    console.error('Counsellor login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during counsellor login'
+    });
+  }
+};
+
+// @desc    Admin signup (separate from student registration)
+// @route   POST /api/v1/auth/admin/signup
+// @access  Public
+const adminSignup = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { collegeName, email, phoneNumber, department, collegeCode, password } = req.body;
+
+    // Check if admin already exists
+    let existingUser = await User.findByEmail(email);
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'User with this email already exists'
+      });
+    }
+
+    // Generate admin ID (for collegeId field)
+    const adminCount = await User.countDocuments({ role: 'admin' });
+    const adminId = `ADMIN${String(adminCount + 1).padStart(4, '0')}`;
+
+    // Create admin user
+    const user = await User.create({
+      email,
+      passwordHash: password, // Will be hashed by pre-save hook
+      name: collegeName, // Use college name as the admin name
+      collegeId: adminId,
+      role: 'admin',
+      department,
+      // Store additional admin-specific info in a way that fits the current schema
+      // We can extend the schema later if needed
+      phoneNumber: phoneNumber, // This field needs to be added to schema
+      collegeCode: collegeCode, // This field needs to be added to schema
+      languagePref: 'en'
+    });
+
+    // Update last login
+    await user.updateLastLogin();
+
+    sendTokenResponse(user, 201, res, 'Admin account created successfully');
+
+  } catch (error) {
+    console.error('Admin signup error:', error);
+    
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0];
+      return res.status(400).json({
+        success: false,
+        message: `Admin with this ${field} already exists`
+      });
+    }
+
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: messages
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error during admin registration'
     });
   }
 };
@@ -160,6 +354,12 @@ const login = async (req, res, next) => {
     // Update last login
     await user.updateLastLogin();
 
+    // Ensure anonymousDisplayName is generated if it doesn't exist
+    if (!user.anonymousDisplayName) {
+      user.anonymousDisplayName = user.generateAnonymousDisplayName();
+      await user.save();
+    }
+
     sendTokenResponse(user, 200, res, 'Login successful');
 
   } catch (error) {
@@ -199,13 +399,13 @@ const logout = async (req, res, next) => {
 // @access  Private
 const getMe = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id);
+    // req.user is already the full user object from auth middleware
+    const user = req.user;
     
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
+    // Ensure anonymousDisplayName is generated if it doesn't exist
+    if (!user.anonymousDisplayName) {
+      user.anonymousDisplayName = user.generateAnonymousDisplayName();
+      await user.save();
     }
 
     res.status(200).json({
@@ -261,5 +461,8 @@ module.exports = {
   login,
   logout,
   getMe,
-  updateProfile
+  updateProfile,
+  adminLogin,
+  counsellorLogin,
+  adminSignup
 };

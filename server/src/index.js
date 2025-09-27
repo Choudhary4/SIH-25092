@@ -14,7 +14,8 @@ const {
   authRateLimit, 
   chatRateLimit, 
   sensitiveRateLimit,
-  publicRateLimit 
+  publicRateLimit,
+  createCustomRateLimit 
 } = require('./middlewares/rateLimit');
 const { 
   auditMiddleware, 
@@ -30,6 +31,9 @@ const server = http.createServer(app);
 // Initialize Socket.io service
 const socketService = require('./services/socket.service');
 const io = socketService.initSocket(server);
+
+// Create admin rate limit for global admin routes
+const adminRateLimit = createCustomRateLimit(500, 15 * 60 * 1000); // 500 requests per 15 minutes for admins
 
 // Export io instance for use in other modules
 module.exports = { io };
@@ -93,8 +97,8 @@ app.use('/api/auth', authRateLimit, authAuditMiddleware, authRoutes);
 // Chat routes - moderate rate limiting for conversation flow
 app.use('/api/v1/chat', chatRateLimit, crisisAuditMiddleware, chatRoutes);
 
-// Admin routes - sensitive operations with detailed logging
-app.use('/api/v1/admin', sensitiveRateLimit, adminAuditMiddleware, adminRoutes);
+// Admin routes - higher limits for admin operations with detailed logging
+app.use('/api/v1/admin', adminRateLimit, adminAuditMiddleware, adminRoutes);
 
 // Screening routes - sensitive mental health data
 app.use('/api/v1/screenings', sensitiveRateLimit, crisisAuditMiddleware, screeningRoutes);

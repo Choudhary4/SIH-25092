@@ -125,13 +125,17 @@ const sendChatMessage = async (req, res, next) => {
         
         // Get user information for the alert
         let userName = 'Anonymous Chat User';
+        let anonymousDisplayName = 'Anonymous Chat User';
+        let realName = null;
         let userEmail = null;
         let collegeId = null;
         
         if (studentId) {
-          const student = await User.findById(studentId).select('name email collegeId');
+          const student = await User.findById(studentId).select('name email collegeId anonymousDisplayName');
           if (student) {
-            userName = student.name;
+            userName = student.anonymousDisplayName || 'Anonymous Chat User'; // Public display
+            anonymousDisplayName = student.anonymousDisplayName || 'Anonymous Chat User';
+            realName = student.name; // Admin-only for identity tracking
             userEmail = student.email;
             collegeId = student.collegeId;
           }
@@ -139,7 +143,9 @@ const sendChatMessage = async (req, res, next) => {
 
         const alertData = {
           userId: studentId,
-          userName,
+          userName, // Anonymous display name for public display
+          realName, // Real name for admin tracking only
+          anonymousDisplayName,
           userEmail,
           collegeId,
           source: 'chat',

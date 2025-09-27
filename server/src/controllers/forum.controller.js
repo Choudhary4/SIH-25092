@@ -199,13 +199,17 @@ const createForumPost = async (req, res, next) => {
         
         // Get user information for the alert
         let userName = 'Anonymous User';
+        let anonymousDisplayName = 'Anonymous User';
+        let realName = null;
         let userEmail = null;
         let collegeId = null;
         
         if (studentId) {
-          const student = await User.findById(studentId).select('name email collegeId');
+          const student = await User.findById(studentId).select('name email collegeId anonymousDisplayName');
           if (student) {
-            userName = student.name;
+            userName = student.anonymousDisplayName || 'Anonymous User'; // Public display
+            anonymousDisplayName = student.anonymousDisplayName || 'Anonymous User';
+            realName = student.name; // Admin-only for identity tracking
             userEmail = student.email;
             collegeId = student.collegeId;
           }
@@ -217,7 +221,9 @@ const createForumPost = async (req, res, next) => {
           content: body.substring(0, 200) + (body.length > 200 ? '...' : ''),
           studentId,
           contentFlags: contentAnalysis.contentFlags,
-          userName,
+          userName, // Anonymous display name for public display
+          realName, // Real name for admin tracking only
+          anonymousDisplayName,
           userEmail,
           collegeId,
           timestamp: new Date(),

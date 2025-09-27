@@ -1,11 +1,13 @@
-# Student Counselling Platform
+
+# Mann-Mitra - Mental Health Support Platform
+
 
 [![Node.js](https://img.shields.io/badge/Node.js-18.x-green.svg)](https://nodejs.org/)
-[![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
+[![React](https://img.shields.io/badge/React-19.x-blue.svg)](https://reactjs.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green.svg)](https://www.mongodb.com/)
-[![Express.js](https://img.shields.io/badge/Express.js-4.x-orange.svg)](https://expressjs.com/)
+[![Express.js](https://img.shields.io/badge/Express.js-5.x-orange.svg)](https://expressjs.com/)
 
-A comprehensive student counselling platform built for Smart India Hackathon 2025, enabling students to connect with professional counsellors for mental health support and career guidance.
+A comprehensive mental health support platform built for Smart India Hackathon 2025, providing students with AI-powered mental health assistance, professional counselling services, community support, and mental health assessments.
 
 ## 🌟 Features
 
@@ -15,12 +17,13 @@ A comprehensive student counselling platform built for Smart India Hackathon 202
 - **Admins**: Oversee platform operations, manage users and appointments
 - **Moderators**: Content moderation and support assistance
 
-### 📅 **Appointment Management**
-- Real-time counsellor availability checking
-- Flexible scheduling with time slot management
-- Online (video call) and in-person appointment modes
-- Urgency level categorization (Low, Medium, High, Urgent)
-- Private encrypted notes for sensitive information
+### 📅 **Mental Health Services**
+- **AI-Powered Chat**: 24/7 mental health first-aid assistance
+- **Mental Health Screening**: PHQ-9 based depression assessment
+- **Professional Booking**: Schedule appointments with licensed counsellors
+- **Community Forum**: Peer support and shared experiences
+- **Crisis Management**: Immediate support resources and helplines
+- **Offline Support**: Cached helpline directory for emergency access
 
 ### 🔐 **Security & Privacy**
 - JWT-based authentication with role-based access control
@@ -35,29 +38,37 @@ A comprehensive student counselling platform built for Smart India Hackathon 202
 - Responsive design for all devices
 
 ### 🌐 **Multi-language Support**
-- Internationalization (i18n) ready
-- Support for multiple languages
-- Customizable language preferences per user
+- Internationalization (i18n) with react-i18next
+- Support for English and Hindi languages
+- Language switcher component
+- Localized content for all major features
 
 ## 🏗️ Architecture
 
 ```
-├── client/                 # React Frontend
+├── client/
+│   └── client/            # React Frontend (Vite + React)
+│       ├── src/
+│       │   ├── components/  # Reusable UI components
+│       │   ├── pages/      # Page components
+│       │   ├── hooks/      # Custom React hooks
+│       │   ├── contexts/   # React context providers
+│       │   ├── utils/      # Utility functions
+│       │   ├── i18n/       # Internationalization
+│       │   └── data/       # Static data files
+│       └── public/         # Static assets
+├── server/                # Node.js Backend (Express)
 │   ├── src/
-│   │   ├── components/     # Reusable components
-│   │   ├── pages/         # Page components
-│   │   ├── hooks/         # Custom React hooks
-│   │   ├── context/       # React context providers
+│   │   ├── controllers/   # Route controllers
+│   │   ├── models/        # MongoDB models
+│   │   ├── routes/        # API routes
+│   │   ├── middlewares/   # Custom middleware
+│   │   ├── services/      # Business logic services
 │   │   └── utils/         # Utility functions
-│   └── public/            # Static assets
-└── server/                # Node.js Backend
-    ├── src/
-    │   ├── controllers/   # Route controllers
-    │   ├── models/        # MongoDB models
-    │   ├── routes/        # API routes
-    │   ├── middleware/    # Custom middleware
-    │   └── utils/         # Utility functions
-    └── scripts/           # Database scripts
+│   └── scripts/           # Database scripts
+└── buddy/                 # AI Assistant (Python)
+    ├── agents/            # AI agent modules
+    └── main.py            # Entry point
 ```
 
 ## 🚀 Quick Start
@@ -85,7 +96,7 @@ A comprehensive student counselling platform built for Smart India Hackathon 202
 
 3. **Install Frontend Dependencies**
    ```bash
-   cd ../client
+   cd ../client/client
    npm install
    ```
 
@@ -110,8 +121,9 @@ A comprehensive student counselling platform built for Smart India Hackathon 202
 
 2. **Frontend Configuration**
    ```bash
-   cd ../client
-   # Create .env.local if needed for client-specific variables
+   cd ../client/client
+   cp .env.example .env
+   # Update .env with your configuration if needed
    ```
 
 ### Running the Application
@@ -125,10 +137,10 @@ A comprehensive student counselling platform built for Smart India Hackathon 202
 
 2. **Start Frontend Development Server**
    ```bash
-   cd client
+   cd client/client
    npm run dev
    ```
-   Client runs on: `http://localhost:3000`
+   Client runs on: `http://localhost:5173` (Vite default)
 
 ## 📚 API Documentation
 

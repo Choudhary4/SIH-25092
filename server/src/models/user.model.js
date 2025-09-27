@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -51,6 +52,11 @@ const userSchema = new mongoose.Schema({
     trim: true,
     maxlength: [200, 'Specialization must not exceed 200 characters']
   },
+  department: {
+    type: String,
+    trim: true,
+    maxlength: [100, 'Department must not exceed 100 characters']
+  },
   profileImage: {
     type: String,
     trim: true
@@ -66,6 +72,51 @@ const userSchema = new mongoose.Schema({
     min: 0,
     default: null
   },
+  // Counsellor availability schedule
+  availability: {
+    type: [{
+      dayOfWeek: {
+        type: Number, // 0 = Sunday, 1 = Monday, etc.
+        required: true,
+        min: 0,
+        max: 6
+      },
+      startTime: {
+        type: String, // Format: "HH:mm" (24-hour)
+        required: true,
+        match: /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/
+      },
+      endTime: {
+        type: String, // Format: "HH:mm" (24-hour)
+        required: true,
+        match: /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/
+      },
+      isActive: {
+        type: Boolean,
+        default: true
+      }
+    }],
+    default: []
+  },
+  // Admin who created this counsellor account
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: function() {
+      return this.role === 'counsellor';
+    }
+  },
+  // Additional fields for admin accounts
+  phoneNumber: {
+    type: String,
+    trim: true,
+    match: [/^[0-9]{10}$/, 'Please provide a valid 10-digit phone number']
+  },
+  collegeCode: {
+    type: String,
+    trim: true,
+    maxlength: [50, 'College code must not exceed 50 characters']
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -80,6 +131,12 @@ const userSchema = new mongoose.Schema({
   },
   lastLogin: {
     type: Date
+  },
+  // Anonymous display name for public interactions
+  anonymousDisplayName: {
+    type: String,
+    trim: true,
+    maxlength: [30, 'Anonymous display name must not exceed 30 characters']
   }
 }, {
   timestamps: true, // Automatically manage createdAt and updatedAt
@@ -110,11 +167,42 @@ userSchema.pre('save', async function(next) {
   }
 });
 
-// Pre-save hook to update the updatedAt field
+// Pre-save hook to generate anonymous display name and update updatedAt field
 userSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
+  
+  // Generate anonymous display name if it doesn't exist
+  if (!this.anonymousDisplayName && this.isNew) {
+    this.anonymousDisplayName = this.generateAnonymousDisplayName();
+  }
+  
   next();
 });
+
+// Instance method to generate anonymous display name
+userSchema.methods.generateAnonymousDisplayName = function() {
+  const adjectives = [
+    'Wise', 'Brave', 'Kind', 'Calm', 'Hope', 'Joy', 'Peace', 'Star', 'Moon', 'Sun',
+    'Ocean', 'Sky', 'Forest', 'River', 'Wind', 'Light', 'Dream', 'Spirit', 'Soul', 'Heart',
+    'Gentle', 'Strong', 'Swift', 'Bright', 'Silent', 'Mystic', 'Noble', 'Pure', 'Free', 'Bold'
+  ];
+  
+  const nouns = [
+    'Seeker', 'Walker', 'Guide', 'Friend', 'Helper', 'Listener', 'Healer', 'Guardian', 'Companion', 'Voyager',
+    'Dreamer', 'Thinker', 'Writer', 'Artist', 'Explorer', 'Wanderer', 'Scholar', 'Student', 'Teacher', 'Mentor',
+    'Phoenix', 'Eagle', 'Dove', 'Butterfly', 'Lotus', 'Rose', 'Willow', 'Oak', 'Pine', 'Maple'
+  ];
+  
+  // Generate consistent but anonymous name using user ID as seed
+  const seed = this._id.toString();
+  const hash = crypto.createHash('md5').update(seed).digest('hex');
+  
+  const adjIndex = parseInt(hash.substring(0, 2), 16) % adjectives.length;
+  const nounIndex = parseInt(hash.substring(2, 4), 16) % nouns.length;
+  const number = parseInt(hash.substring(4, 6), 16) % 1000;
+  
+  return `${adjectives[adjIndex]}${nouns[nounIndex]}${number.toString().padStart(3, '0')}`;
+};
 
 // Instance method to compare password
 userSchema.methods.comparePassword = async function(plainPassword) {

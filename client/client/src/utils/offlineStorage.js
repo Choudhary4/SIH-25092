@@ -7,7 +7,7 @@ import { openDB } from 'idb';
 import localforage from 'localforage';
 
 // IndexedDB configuration
-const DB_NAME = 'MindCareDB';
+const DB_NAME = 'MannMitraDB';
 const DB_VERSION = 1;
 
 // Store names
@@ -431,7 +431,7 @@ export const mediaStorage = {
   // Initialize localforage
   init() {
     localforage.config({
-      name: 'MindCareMedia',
+      name: 'MannMitraMedia',
       storeName: 'media_files',
       description: 'Cached media files for offline access'
     });

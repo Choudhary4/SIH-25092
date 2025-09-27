@@ -1,26 +1,100 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { Link } from 'react-router-dom'
+import { useApi } from '../../hooks/useApi'
 
 const StudentDashboard = () => {
   const { user } = useAuth()
+  const { callApi } = useApi()
   const [stats, setStats] = useState({
     screeningsCompleted: 0,
     appointmentsScheduled: 0,
     forumPosts: 0,
     resourcesAccessed: 0
   })
+  const [appointments, setAppointments] = useState([])
+  const [latestAppointment, setLatestAppointment] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Fetch student stats from API
-    // This is a placeholder - replace with actual API calls
-    setStats({
-      screeningsCompleted: 3,
-      appointmentsScheduled: 1,
-      forumPosts: 5,
-      resourcesAccessed: 12
-    })
+    fetchDashboardData()
   }, [])
+
+  const fetchDashboardData = async () => {
+    setLoading(true)
+    try {
+      // Check for latest appointment in localStorage
+      const savedAppointment = localStorage.getItem('latestAppointment')
+      if (savedAppointment) {
+        const parsedAppointment = JSON.parse(savedAppointment)
+        setLatestAppointment(parsedAppointment)
+      }
+
+      // Fetch appointments from API
+      const appointmentsResponse = await callApi('/api/v1/appointments/me')
+      if (appointmentsResponse.success) {
+        const fetchedAppointments = appointmentsResponse.data || []
+        setAppointments(fetchedAppointments)
+        
+        // If we have API data, use the most recent appointment instead of localStorage
+        if (fetchedAppointments.length > 0) {
+          const mostRecent = fetchedAppointments[fetchedAppointments.length - 1]
+          if (mostRecent) {
+            const formattedAppointment = {
+              id: mostRecent._id,
+              counsellor: mostRecent.counsellorId,
+              date: mostRecent.slotStart.split('T')[0],
+              startTime: new Date(mostRecent.slotStart).getHours() + new Date(mostRecent.slotStart).getMinutes() / 60,
+              duration: Math.round((new Date(mostRecent.slotEnd) - new Date(mostRecent.slotStart)) / (1000 * 60)),
+              mode: mostRecent.mode === 'in-person' ? 'in-person' : mostRecent.mode === 'tele' ? 'video' : 'chat',
+              reason: mostRecent.reason,
+              urgency: mostRecent.urgency,
+              location: mostRecent.location,
+              status: mostRecent.status,
+              createdAt: mostRecent.createdAt
+            }
+            setLatestAppointment(formattedAppointment)
+            // Update localStorage with API data
+            localStorage.setItem('latestAppointment', JSON.stringify(formattedAppointment))
+          }
+        }
+        
+        // Update stats with real data
+        setStats({
+          screeningsCompleted: 3, // This would come from screening API
+          appointmentsScheduled: fetchedAppointments.length,
+          forumPosts: 5, // This would come from forum API
+          resourcesAccessed: 12 // This would come from resources API
+        })
+      } else {
+        // Fallback to localStorage data if API fails
+        const savedAppointment = localStorage.getItem('latestAppointment')
+        setStats({
+          screeningsCompleted: 3,
+          appointmentsScheduled: savedAppointment ? 1 : 0,
+          forumPosts: 5,
+          resourcesAccessed: 12
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error)
+      // Use localStorage appointment if available
+      const savedAppointment = localStorage.getItem('latestAppointment')
+      setStats({
+        screeningsCompleted: 3,
+        appointmentsScheduled: savedAppointment ? 1 : 0,
+        forumPosts: 5,
+        resourcesAccessed: 12
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const clearLatestAppointment = () => {
+    localStorage.removeItem('latestAppointment')
+    setLatestAppointment(null)
+  }
 
   const quickActions = [
     {
@@ -59,7 +133,7 @@ const StudentDashboard = () => {
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, {user?.name}! 👋
+            Welcome back, {user?.anonymousDisplayName || user?.name}! 👋
           </h1>
           <p className="text-gray-600">
             Here's what's happening with your mental health journey today.
@@ -117,6 +191,110 @@ const StudentDashboard = () => {
           </div>
         </div>
 
+        {/* Latest Appointment Details */}
+        {latestAppointment && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Latest Appointment</h2>
+            <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center mb-3">
+                    <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mr-4">
+                      <span className="text-2xl">👨‍⚕️</span>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">{latestAppointment.counsellor?.name}</h3>
+                      <p className="text-sm text-gray-600">{latestAppointment.counsellor?.specialization}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Date & Time</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {new Date(latestAppointment.date).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {latestAppointment.startTime > 12 ? 
+                          `${latestAppointment.startTime - 12}:00 PM` : 
+                          `${latestAppointment.startTime}:00 AM`
+                        }
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Duration</p>
+                      <p className="text-sm font-medium text-gray-900">{latestAppointment.duration} minutes</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Session Type</p>
+                      <p className="text-sm font-medium text-gray-900 capitalize">
+                        {latestAppointment.mode === 'in-person' ? 'Offline Meet' : 
+                         latestAppointment.mode === 'video' ? 'Video Call' : 'Online Chat'}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Status</p>
+                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                        latestAppointment.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                        latestAppointment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        latestAppointment.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                        'bg-blue-100 text-blue-800'
+                      }`}>
+                        {latestAppointment.status?.charAt(0).toUpperCase() + latestAppointment.status?.slice(1) || 'Pending'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {latestAppointment.reason && (
+                    <div className="mb-3">
+                      <p className="text-xs text-gray-500 mb-1">Appointment Reason</p>
+                      <p className="text-sm text-gray-900">{latestAppointment.reason}</p>
+                    </div>
+                  )}
+                  
+                  {latestAppointment.location && latestAppointment.mode === 'in-person' && (
+                    <div className="mb-3">
+                      <p className="text-xs text-gray-500 mb-1">Location</p>
+                      <p className="text-sm text-gray-900">{latestAppointment.location}</p>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="ml-4">
+                  <div className={`w-3 h-3 rounded-full ${
+                    latestAppointment.status === 'confirmed' ? 'bg-green-500' :
+                    latestAppointment.status === 'pending' ? 'bg-yellow-500' :
+                    latestAppointment.status === 'cancelled' ? 'bg-red-500' :
+                    'bg-blue-500'
+                  }`}></div>
+                </div>
+              </div>
+              
+              <div className="flex space-x-3 mt-4 pt-4 border-t border-gray-100">
+                <Link
+                  to="/appointments"
+                  className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
+                >
+                  View All Appointments
+                </Link>
+                <Link
+                  to="/booking"
+                  className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  Book Another Session
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Quick Actions */}
         <div className="mb-8">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
@@ -143,37 +321,62 @@ const StudentDashboard = () => {
             <h2 className="text-xl font-bold text-gray-900">Recent Activity</h2>
           </div>
           <div className="p-6">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <span className="text-green-600">✓</span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Completed PHQ-9 screening</p>
-                  <p className="text-xs text-gray-500">2 hours ago</p>
-                </div>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+                <span className="ml-3 text-gray-600">Loading activities...</span>
               </div>
-              
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600">📅</span>
+            ) : (
+              <div className="space-y-4">
+                {latestAppointment && (
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                      <span className="text-green-600">📅</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        Booked counselling session with {latestAppointment.counsellor?.name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(latestAppointment.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-blue-600">✓</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Completed PHQ-9 screening</p>
+                    <p className="text-xs text-gray-500">2 hours ago</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Scheduled counselling appointment</p>
-                  <p className="text-xs text-gray-500">Yesterday</p>
+                
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                    <span className="text-purple-600">💬</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Posted in "Stress Management" forum</p>
+                    <p className="text-xs text-gray-500">3 days ago</p>
+                  </div>
                 </div>
+                
+                {!latestAppointment && appointments.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">No recent activity</p>
+                    <Link
+                      to="/booking"
+                      className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
+                    >
+                      Book Your First Session
+                    </Link>
+                  </div>
+                )}
               </div>
-              
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                  <span className="text-purple-600">💬</span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Posted in "Stress Management" forum</p>
-                  <p className="text-xs text-gray-500">3 days ago</p>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
