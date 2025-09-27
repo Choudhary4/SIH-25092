@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
+import { useApi } from '../hooks/useApi'
 
 const CounsellorLogin = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { login } = useAuth()
+  const { callApi } = useApi()
   
   const [formData, setFormData] = useState({
     email: '',
@@ -29,25 +31,28 @@ const CounsellorLogin = () => {
     setError('')
 
     try {
-      const response = await fetch('/api/v1/auth/counsellor/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      })
+      const response = await callApi('/api/v1/auth/counsellor/login', 'POST', formData)
 
-      const data = await response.json()
+      console.log('Counsellor login response:', response)
 
-      if (data.success) {
-        // Store counsellor token and user info
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify(data.user))
+      if (response.success) {
+        // The useApi hook wraps the server response in a 'data' field
+        const serverResponse = response.data || response
+        const token = serverResponse.token
+        const user = serverResponse.user
+        
+        console.log('Storing counsellor token:', token)
+        console.log('Storing counsellor user:', user)
+        
+        // Store counsellor token and user info with consistent token key
+        localStorage.setItem('Mann-Mitra_token', token)
+        localStorage.setItem('user', JSON.stringify(user))
         
         // Redirect to counsellor dashboard
         navigate('/counsellor/dashboard')
       } else {
-        setError(data.message || 'Invalid counsellor credentials')
+        const serverResponse = response.data || response
+        setError(serverResponse.message || 'Invalid counsellor credentials')
       }
     } catch (error) {
       console.error('Counsellor login error:', error)

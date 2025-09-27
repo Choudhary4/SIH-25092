@@ -10,6 +10,7 @@ import AdminSignup from './pages/AdminSignup'
 import CounsellorLogin from './pages/CounsellorLogin'
 import Screening from './pages/Screening'
 import Chat from './pages/Chat'
+import ChatPlatform from './pages/ChatPlatform'
 import Booking from './pages/Booking'
 import Forum from './pages/Forum'
 import SimpleForum from './pages/SimpleForum'
@@ -18,6 +19,8 @@ import Admin from './pages/Admin'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminDashboardNew from './pages/AdminDashboardNew'
 import CounsellorDashboard from './pages/CounsellorDashboard'
+import Appointments from './pages/Appointments'
+import AppointmentDetails from './pages/AppointmentDetails'
 import NotFound from './pages/NotFound'
 import About from './pages/About'
 import Resources from './pages/Resources'
@@ -42,9 +45,10 @@ function App() {
         {/* Dashboard routes - no header */}
         <Route path="/admin/dashboard" element={<AdminDashboardNew />} />
         <Route path="/counsellor/dashboard" element={<CounsellorDashboard />} />
+        <Route path="/chat-platform" element={<ChatPlatform />} />
         
         {/* Main app routes - with header */}
-        <Route path="/*" element={
+        <Route path="*" element={
           <>
             <Header />
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -56,6 +60,8 @@ function App() {
                 <Route path='/dashboard' element = {<StudentDashboard/>}/>
                 <Route path="/chat" element={<Chat />} />
                 <Route path="/booking" element={<Booking />} />
+                <Route path="/appointments" element={<Appointments />} />
+                <Route path="/appointments/:id" element={<AppointmentDetails />} />
                 <Route path="/forum" element={<ErrorBoundary><Forum /></ErrorBoundary>} />
                 <Route path="/moderator" element={<Moderator />} />
                 <Route path="/admin" element={<Admin />} />

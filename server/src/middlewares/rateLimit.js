@@ -2,14 +2,14 @@ const rateLimit = require('express-rate-limit');
 
 /**
  * Default rate limiting middleware
- * 100 requests per hour for general API endpoints
+ * 1000 requests per hour for general API endpoints (increased for normal usage)
  */
 const defaultRateLimit = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 1000, // Limit each IP to 1000 requests per windowMs
   message: {
     error: 'Too many requests from this IP',
-    message: 'Please try again later. Rate limit: 100 requests per hour.',
+    message: 'Please try again later. Rate limit: 1000 requests per hour.',
     retryAfter: '1 hour'
   },
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
@@ -25,15 +25,15 @@ const defaultRateLimit = rateLimit({
 });
 
 /**
- * Strict rate limiting for authentication endpoints
- * 20 requests per hour to prevent brute force attacks
+ * Balanced rate limiting for authentication endpoints
+ * 100 requests per hour - strict enough for security, flexible for development
  */
 const authRateLimit = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 20, // Limit each IP to 20 auth requests per hour
+  max: 100, // Limit each IP to 100 auth requests per hour
   message: {
     error: 'Too many authentication attempts',
-    message: 'Please try again later. Rate limit: 20 attempts per hour.',
+    message: 'Please try again later. Rate limit: 100 attempts per hour.',
     retryAfter: '1 hour'
   },
   standardHeaders: true,
@@ -52,14 +52,14 @@ const authRateLimit = rateLimit({
 
 /**
  * Moderate rate limiting for chat endpoints
- * 50 requests per hour to prevent spam while allowing conversation flow
+ * 300 requests per hour to prevent spam while allowing conversation flow
  */
 const chatRateLimit = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 50, // Limit each IP to 50 chat requests per hour
+  max: 300, // Limit each IP to 300 chat requests per hour
   message: {
     error: 'Too many chat requests',
-    message: 'Please slow down your conversation. Rate limit: 50 messages per hour.',
+    message: 'Please slow down your conversation. Rate limit: 300 messages per hour.',
     retryAfter: '1 hour'
   },
   standardHeaders: true,
@@ -76,15 +76,15 @@ const chatRateLimit = rateLimit({
 });
 
 /**
- * Very strict rate limiting for sensitive operations
- * 10 requests per hour for critical actions like escalations
+ * Strict rate limiting for sensitive operations
+ * 50 requests per hour for critical actions like screenings and escalations
  */
 const sensitiveRateLimit = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // Limit each IP to 10 sensitive operations per hour
+  max: 50, // Limit each IP to 50 sensitive operations per hour
   message: {
     error: 'Too many sensitive operations',
-    message: 'Rate limit for sensitive operations: 10 per hour.',
+    message: 'Rate limit for sensitive operations: 50 per hour.',
     retryAfter: '1 hour'
   },
   standardHeaders: true,

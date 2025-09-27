@@ -226,7 +226,7 @@ const analyzeContent = (title, body) => {
   const spamAnalysis = analyzeSpam(fullText);
   
   // Determine overall status
-  let recommendedStatus = 'pending_moderation';
+  let recommendedStatus = 'published'; // Default to published for clean content
   let requiresImmediate = false;
   
   if (selfHarmAnalysis.severity === 'high' || violenceAnalysis.severity === 'high') {
