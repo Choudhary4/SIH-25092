@@ -30,7 +30,8 @@ export const useApi = () => {
       }
 
       // Use full URL if endpoint starts with http, otherwise use relative path
-      const url = endpoint.startsWith('http') ? endpoint : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${endpoint}`;
+      const baseUrl = import.meta?.env?.VITE_API_URL || 'http://localhost:5000/api';
+      const url = endpoint.startsWith('http') ? endpoint : `${baseUrl}${endpoint}`;
       
       const response = await fetch(url, config);
       

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 
 // Mock data for development/testing
@@ -136,34 +137,37 @@ const Booking = () => {
         counsellorId: selectedCounsellor.id,
         slotStart: startDateTime.toISOString(),
         slotEnd: endDateTime.toISOString(),
-        duration: selectedDuration,
-        mode: appointmentMode,
+        mode: appointmentMode === 'in-person' ? 'in-person' : 'tele',
         reason: appointmentReason.trim() || 'General counselling session',
         urgency: appointmentUrgency,
         location: appointmentMode === 'in-person' ? location.trim() : undefined,
         privateNotes: privateNotes.trim() || undefined
       };
 
-      if (typeof callApi === 'function') {
-        const response = await callApi('/api/v1/appointments', 'POST', bookingData);
-        if (response.success) {
-          setBookingSuccess(true);
-          // Reset form after successful booking
-          setTimeout(() => {
-            resetBookingFlow();
-          }, 3000);
-          setLoading(false);
-          return;
-        } else {
-          setError(response.error || 'Failed to book appointment. Please try again.');
-        }
-      } else {
-        // Mock successful booking for development
-        console.log('Mock booking created:', bookingData);
+      const response = await callApi('/api/v1/appointments', 'POST', bookingData);
+      
+      if (response.success) {
+        // Store appointment details for dashboard display
+        const appointmentDetails = {
+          id: response.data._id || Date.now(),
+          counsellor: selectedCounsellor,
+          date: selectedDate,
+          startTime: selectedTime,
+          duration: selectedDuration,
+          mode: appointmentMode,
+          reason: appointmentReason,
+          urgency: appointmentUrgency,
+          location: location,
+          status: response.data.status || 'pending',
+          createdAt: new Date().toISOString()
+        };
+        
+        // Store in localStorage for immediate dashboard access
+        localStorage.setItem('latestAppointment', JSON.stringify(appointmentDetails));
+        
         setBookingSuccess(true);
-        setTimeout(() => {
-          resetBookingFlow();
-        }, 3000);
+      } else {
+        setError(response.error || 'Failed to book appointment. Please try again.');
       }
     } catch (err) {
       console.error('Error creating booking:', err);
@@ -232,25 +236,40 @@ const Booking = () => {
     return maxDate.toISOString().split('T')[0];
   };
 
-  if (bookingSuccess) {
+    if (bookingSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md mx-auto">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl shadow-xl p-8 text-center"
-          >
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center"
+        >
+          <div className="mb-6">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Successful!</h2>
-            <p className="text-gray-600 mb-6">Your counselling session has been booked successfully.</p>
-            <p className="text-sm text-gray-500">Redirecting back to booking page...</p>
-          </motion.div>
-        </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Confirmed!</h2>
+            <p className="text-gray-600 mb-6">
+              Your counselling session has been successfully booked. You'll receive a confirmation email shortly.
+            </p>
+            <div className="space-y-2 mb-6">
+              <Link
+                to="/dashboard"
+                className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-indigo-700 transition-colors block"
+              >
+                View in Dashboard
+              </Link>
+              <button
+                onClick={resetBookingFlow}
+                className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+              >
+                Book Another Session
+              </button>
+            </div>
+          </div>
+        </motion.div>
       </div>
     );
   }
