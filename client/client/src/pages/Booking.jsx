@@ -31,40 +31,40 @@ const mockCounsellors = [
   },
 ];
 
-const mockSlots = [
-  {
-    id: 1,
-    startTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
-    endTime: new Date(Date.now() + 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString(), // +1 hour
-    duration: 60,
-    type: 'General Session',
-  },
-  {
-    id: 2,
-    startTime: new Date(Date.now() + 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(), // Tomorrow +2 hours
-    endTime: new Date(Date.now() + 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000).toISOString(), // +1 hour
-    duration: 60,
-    type: 'Extended Session',
-  },
-  {
-    id: 3,
-    startTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // Day after tomorrow
-    endTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString(), // +1 hour
-    duration: 60,
-    type: 'General Session',
-  },
-];
+// Available time slots for each day (9 AM to 6 PM)
+const getAvailableTimeSlots = () => {
+  const slots = [];
+  for (let hour = 9; hour <= 17; hour++) { // 9 AM to 5 PM (last slot at 5 PM for 1-hour session)
+    slots.push({
+      value: hour,
+      label: `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`,
+      display: `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`
+    });
+    // Add 30-minute slots
+    if (hour < 17) { // Don't add 30-minute slot for last hour
+      slots.push({
+        value: hour + 0.5,
+        label: `${hour > 12 ? hour - 12 : hour}:30 ${hour >= 12 ? 'PM' : 'AM'}`,
+        display: `${hour > 12 ? hour - 12 : hour}:30 ${hour >= 12 ? 'PM' : 'AM'}`
+      });
+    }
+  }
+  return slots;
+};
+
+const AVAILABLE_TIME_SLOTS = getAvailableTimeSlots();
 
 const Booking = () => {
   const { t } = useTranslation();
   const { callApi } = useApi();
 
   // State management for the booking flow
-  const [step, setStep] = useState(1); // 1: Select Counsellor, 2: Select Slot, 3: Booking Form
+  const [step, setStep] = useState(1); // 1: Select Counsellor, 2: Select Date & Time, 3: Booking Form
   const [counsellors, setCounsellors] = useState([]);
   const [selectedCounsellor, setSelectedCounsellor] = useState(null);
-  const [availableSlots, setAvailableSlots] = useState([]);
-  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [selectedDuration, setSelectedDuration] = useState(60); // Default 60 minutes
   const [appointmentMode, setAppointmentMode] = useState('chat');
   const [appointmentReason, setAppointmentReason] = useState('');
   const [appointmentUrgency, setAppointmentUrgency] = useState('medium');
@@ -107,45 +107,15 @@ const Booking = () => {
     }
   };
 
-  const fetchAvailableSlots = async (counsellorId) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      // Try to fetch from API first
-      if (typeof callApi === 'function') {
-        const response = await callApi(`/api/v1/counsellors/${counsellorId}/slots`, 'GET');
-        if (response.success && response.data && response.data.length > 0) {
-          setAvailableSlots(response.data);
-          setStep(2);
-          setLoading(false);
-          return;
-        }
-      }
-      
-      // Fallback to mock data
-      console.log('Using mock slots data');
-      setAvailableSlots(mockSlots);
-      setStep(2);
-    } catch (err) {
-      console.error('Error fetching slots:', err);
-      // Use mock data as fallback
-      console.log('Falling back to mock slots data');
-      setAvailableSlots(mockSlots);
-      setStep(2);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCounsellorSelect = (counsellor) => {
     setSelectedCounsellor(counsellor);
-    fetchAvailableSlots(counsellor.id);
+    setStep(2); // Move to date/time selection
   };
 
-  const handleSlotSelect = (slot) => {
-    setSelectedSlot(slot);
-    setStep(3);
+  const handleDateTimeSelect = () => {
+    if (selectedDate && selectedTime) {
+      setStep(3);
+    }
   };
 
   const handleBookingSubmit = async (e) => {
@@ -154,10 +124,19 @@ const Booking = () => {
     setError(null);
 
     try {
+      // Create start and end times from selected date and time
+      const [year, month, day] = selectedDate.split('-');
+      const startHour = Math.floor(selectedTime);
+      const startMinutes = (selectedTime % 1) * 60;
+      
+      const startDateTime = new Date(year, month - 1, day, startHour, startMinutes);
+      const endDateTime = new Date(startDateTime.getTime() + selectedDuration * 60 * 1000);
+
       const bookingData = {
         counsellorId: selectedCounsellor.id,
-        slotStart: selectedSlot.startTime,
-        slotEnd: selectedSlot.endTime,
+        slotStart: startDateTime.toISOString(),
+        slotEnd: endDateTime.toISOString(),
+        duration: selectedDuration,
         mode: appointmentMode,
         reason: appointmentReason.trim() || 'General counselling session',
         urgency: appointmentUrgency,
@@ -197,8 +176,9 @@ const Booking = () => {
   const resetBookingFlow = () => {
     setStep(1);
     setSelectedCounsellor(null);
-    setAvailableSlots([]);
-    setSelectedSlot(null);
+    setSelectedDate('');
+    setSelectedTime('');
+    setSelectedDuration(60);
     setAppointmentMode('chat');
     setAppointmentReason('');
     setAppointmentUrgency('medium');
@@ -212,10 +192,10 @@ const Booking = () => {
     if (step === 2) {
       setStep(1);
       setSelectedCounsellor(null);
-      setAvailableSlots([]);
+      setSelectedDate('');
+      setSelectedTime('');
     } else if (step === 3) {
       setStep(2);
-      setSelectedSlot(null);
     }
   };
 
@@ -236,6 +216,20 @@ const Booking = () => {
       minute: '2-digit',
       hour12: true
     });
+  };
+
+  // Get minimum date (tomorrow)
+  const getMinDate = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  };
+
+  // Get maximum date (3 months from now)
+  const getMaxDate = () => {
+    const maxDate = new Date();
+    maxDate.setMonth(maxDate.getMonth() + 3);
+    return maxDate.toISOString().split('T')[0];
   };
 
   if (bookingSuccess) {
@@ -325,7 +319,7 @@ const Booking = () => {
           <div className="flex justify-center mt-2">
             <span className="text-sm text-gray-600">
               {step === 1 && 'Select a Counsellor'}
-              {step === 2 && 'Choose Available Time Slot'}
+              {step === 2 && 'Choose Date & Time'}
               {step === 3 && 'Confirm Your Booking'}
             </span>
           </div>
@@ -377,24 +371,30 @@ const Booking = () => {
               />
             )}
 
-            {/* Step 2: Select Slot */}
+            {/* Step 2: Select Date & Time */}
             {step === 2 && selectedCounsellor && (
-              <SlotSelection
+              <DateTimeSelection
                 counsellor={selectedCounsellor}
-                slots={availableSlots}
-                loading={loading}
-                onSelect={handleSlotSelect}
-                formatDate={formatDate}
-                formatTime={formatTime}
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+                selectedTime={selectedTime}
+                setSelectedTime={setSelectedTime}
+                selectedDuration={selectedDuration}
+                setSelectedDuration={setSelectedDuration}
+                onNext={handleDateTimeSelect}
+                getMinDate={getMinDate}
+                getMaxDate={getMaxDate}
                 t={t}
               />
             )}
 
             {/* Step 3: Booking Form */}
-            {step === 3 && selectedCounsellor && selectedSlot && (
+            {step === 3 && selectedCounsellor && selectedDate && selectedTime && (
               <BookingForm
                 counsellor={selectedCounsellor}
-                slot={selectedSlot}
+                selectedDate={selectedDate}
+                selectedTime={selectedTime}
+                selectedDuration={selectedDuration}
                 appointmentMode={appointmentMode}
                 setAppointmentMode={setAppointmentMode}
                 appointmentReason={appointmentReason}
@@ -499,81 +499,163 @@ const CounsellorSelection = ({ counsellors, loading, onSelect, t }) => {
   );
 };
 
-// Slot Selection Component
-const SlotSelection = ({ counsellor, slots, loading, onSelect, formatDate, formatTime, t }) => {
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-        <span className="ml-3 text-gray-600">{t('booking.loading.slots')}</span>
-      </div>
-    );
-  }
-
-  if (slots.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a4 4 0 118 0v4m-4 6v6m-4-6h8m-4-6V3m0 10h.01" />
-        </svg>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">{t('booking.noSlots.title')}</h3>
-        <p className="text-gray-600">{t('booking.noSlots.message')}</p>
-      </div>
-    );
-  }
-
-  // Group slots by date
-  const groupedSlots = slots.reduce((groups, slot) => {
-    const date = formatDate(slot.startTime);
-    if (!groups[date]) {
-      groups[date] = [];
-    }
-    groups[date].push(slot);
-    return groups;
-  }, {});
+// Date and Time Selection Component
+const DateTimeSelection = ({ 
+  counsellor, 
+  selectedDate, 
+  setSelectedDate, 
+  selectedTime, 
+  setSelectedTime,
+  selectedDuration,
+  setSelectedDuration,
+  onNext, 
+  getMinDate, 
+  getMaxDate, 
+  t 
+}) => {
+  const timeSlots = AVAILABLE_TIME_SLOTS;
+  const isFormValid = selectedDate && selectedTime;
 
   return (
-    <div>
+    <div className="space-y-6">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">{t('booking.selectSlot.title')}</h2>
-        <p className="text-gray-600 mt-1">{t('booking.selectSlot.counsellor')}: {counsellor.name}</p>
+        <h2 className="text-xl font-semibold text-gray-900">Choose Date & Time</h2>
+        <p className="text-gray-600 mt-1">Counsellor: {counsellor.name}</p>
       </div>
 
-      <div className="space-y-6">
-        {Object.entries(groupedSlots).map(([date, dateSlots]) => (
-          <div key={date}>
-            <h3 className="text-lg font-medium text-gray-900 mb-3">{date}</h3>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {dateSlots.map((slot) => (
-                <motion.button
-                  key={slot.id}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => onSelect(slot)}
-                  className="border border-gray-200 rounded-lg p-4 text-left hover:border-indigo-300 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">{slot.duration} {t('booking.minutes')}</p>
-                      {slot.type && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-2">
-                          {slot.type}
-                        </span>
-                      )}
-                    </div>
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </motion.button>
-              ))}
+      {/* Date Selection */}
+      <div>
+        <label htmlFor="appointment-date" className="block text-sm font-medium text-gray-700 mb-3">
+          Select Date <span className="text-red-500">*</span>
+        </label>
+        <div className="relative">
+          <input
+            id="appointment-date"
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            min={getMinDate()}
+            max={getMaxDate()}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-lg"
+            required
+          />
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a4 4 0 118 0v4m-4 6v6m-4-6h8m-4-6V3m0 10h.01" />
+            </svg>
+          </div>
+        </div>
+        <p className="text-xs text-gray-500 mt-1">
+          You can book appointments from tomorrow up to 3 months in advance.
+        </p>
+      </div>
+
+      {/* Time Selection */}
+      <div>
+        <label htmlFor="appointment-time" className="block text-sm font-medium text-gray-700 mb-3">
+          Select Time <span className="text-red-500">*</span>
+        </label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          {timeSlots.map((slot) => (
+            <motion.button
+              key={slot.value}
+              type="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setSelectedTime(slot.value)}
+              className={`p-3 rounded-lg border-2 text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                selectedTime === slot.value
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-indigo-300 hover:bg-indigo-50'
+              }`}
+            >
+              {slot.display}
+            </motion.button>
+          ))}
+        </div>
+        <p className="text-xs text-gray-500 mt-2">
+          Available time slots: 9:00 AM to 6:00 PM (30-minute intervals)
+        </p>
+      </div>
+
+      {/* Duration Selection */}
+      <div>
+        <label htmlFor="session-duration" className="block text-sm font-medium text-gray-700 mb-3">
+          Session Duration
+        </label>
+        <select
+          id="session-duration"
+          value={selectedDuration}
+          onChange={(e) => setSelectedDuration(parseInt(e.target.value))}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+        >
+          <option value={30}>30 minutes</option>
+          <option value={60}>60 minutes (Recommended)</option>
+          <option value={90}>90 minutes</option>
+        </select>
+      </div>
+
+      {/* Selected Date and Time Summary */}
+      {selectedDate && selectedTime && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-green-50 border border-green-200 rounded-lg p-4"
+        >
+          <h4 className="font-medium text-green-900 mb-2">Selected Appointment</h4>
+          <div className="space-y-1 text-sm text-green-800">
+            <div className="flex justify-between">
+              <span>Date:</span>
+              <span className="font-medium">
+                {new Date(selectedDate).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>Time:</span>
+              <span className="font-medium">
+                {timeSlots.find(slot => slot.value === selectedTime)?.display}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>Duration:</span>
+              <span className="font-medium">{selectedDuration} minutes</span>
+            </div>
+            <div className="flex justify-between">
+              <span>End Time:</span>
+              <span className="font-medium">
+                {AVAILABLE_TIME_SLOTS.find(slot => slot.value === selectedTime + (selectedDuration / 60))?.display || 
+                 `${Math.floor(selectedTime + (selectedDuration / 60)) > 12 ? 
+                   Math.floor(selectedTime + (selectedDuration / 60)) - 12 : 
+                   Math.floor(selectedTime + (selectedDuration / 60))}:${
+                   ((selectedTime + (selectedDuration / 60)) % 1) * 60 === 0 ? '00' : 
+                   ((selectedTime + (selectedDuration / 60)) % 1) * 60
+                 } ${Math.floor(selectedTime + (selectedDuration / 60)) >= 12 ? 'PM' : 'AM'}`
+                }
+              </span>
             </div>
           </div>
-        ))}
-      </div>
+        </motion.div>
+      )}
+
+      {/* Continue Button */}
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={onNext}
+        disabled={!isFormValid}
+        className={`w-full py-3 px-4 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
+          isFormValid
+            ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+        }`}
+      >
+        Continue to Booking Details
+      </motion.button>
     </div>
   );
 };
@@ -581,7 +663,9 @@ const SlotSelection = ({ counsellor, slots, loading, onSelect, formatDate, forma
 // Booking Form Component
 const BookingForm = ({ 
   counsellor, 
-  slot, 
+  selectedDate,
+  selectedTime,
+  selectedDuration,
   appointmentMode, 
   setAppointmentMode,
   appointmentReason,
@@ -620,23 +704,45 @@ const BookingForm = ({
       
       {/* Booking Summary */}
       <div className="bg-gray-50 rounded-lg p-4 mb-6">
-        <h3 className="font-medium text-gray-900 mb-3">{t('booking.summary.title')}</h3>
+        <h3 className="font-medium text-gray-900 mb-3">Booking Summary</h3>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-gray-600">{t('booking.summary.counsellor')}:</span>
+            <span className="text-gray-600">Counsellor:</span>
             <span className="font-medium">{counsellor.name}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">{t('booking.summary.date')}:</span>
-            <span className="font-medium">{formatDate(slot.startTime)}</span>
+            <span className="text-gray-600">Date:</span>
+            <span className="font-medium">
+              {new Date(selectedDate).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">{t('booking.summary.time')}:</span>
-            <span className="font-medium">{formatTime(slot.startTime)} - {formatTime(slot.endTime)}</span>
+            <span className="text-gray-600">Start Time:</span>
+            <span className="font-medium">
+              {AVAILABLE_TIME_SLOTS.find(slot => slot.value === selectedTime)?.display}
+            </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">{t('booking.summary.duration')}:</span>
-            <span className="font-medium">{slot.duration} {t('booking.minutes')}</span>
+            <span className="text-gray-600">Duration:</span>
+            <span className="font-medium">{selectedDuration} minutes</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">End Time:</span>
+            <span className="font-medium">
+              {AVAILABLE_TIME_SLOTS.find(slot => slot.value === selectedTime + (selectedDuration / 60))?.display || 
+               `${Math.floor(selectedTime + (selectedDuration / 60)) > 12 ? 
+                 Math.floor(selectedTime + (selectedDuration / 60)) - 12 : 
+                 Math.floor(selectedTime + (selectedDuration / 60))}:${
+                 ((selectedTime + (selectedDuration / 60)) % 1) * 60 === 0 ? '00' : 
+                 ((selectedTime + (selectedDuration / 60)) % 1) * 60
+               } ${Math.floor(selectedTime + (selectedDuration / 60)) >= 12 ? 'PM' : 'AM'}`
+              }
+            </span>
           </div>
         </div>
       </div>

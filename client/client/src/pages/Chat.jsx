@@ -102,7 +102,7 @@ const Chat = () => {
   useEffect(() => {
     const welcomeMessage = {
       id: 'welcome',
-      text: 'Hi! I\'m Buddy, your mental health companion. I\'m here to listen and support you. You can chat with me or use voice input. How are you feeling today?',
+      text: 'Hi! I\'m Buddy, your mental health companion. I\'m here to listen and support you. You can chat with me using text or switch to voice mode for spoken conversations. How are you feeling today?',
       sender: 'bot',
       timestamp: new Date(),
       suggestedActions: ['feeling_good', 'feeling_stressed', 'feeling_anxious', 'voice_mode']
@@ -128,26 +128,76 @@ const Chat = () => {
       setIsListening(true)
     }
     
-    recognition.onresult = (event) => {
+    recognition.onresult = async (event) => {
       const transcript = event.results[0][0].transcript
       setInputMessage(transcript)
       setIsListening(false)
 
-      // send transcript to voice_agent REST
-      fetch("http://localhost:8000/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: transcript,
-          session_id: "user123"   // or any unique per-user ID
+      // Add user message to chat
+      const userMessage = {
+        id: Date.now(),
+        text: transcript,
+        sender: 'user',
+        timestamp: new Date(),
+        isVoice: true
+      }
+      setMessages(prev => [...prev, userMessage])
+
+      // Send to voice agent and handle response
+      try {
+        setIsSending(true)
+        const response = await fetch("http://localhost:8000/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: transcript,
+            session_id: "user123",   // or any unique per-user ID
+            response_format: "json"
+          })
         })
-      }    )
-      .then(res => res.blob())
-      .then(blob => {
-        const url = URL.createObjectURL(blob);
-        new Audio(url).play();
-      })
-      .catch(console.error);
+
+        if (response.ok) {
+          const data = await response.json()
+          
+          // Create audio blob from base64
+          const audioBytes = atob(data.audio_base64)
+          const audioArray = new Uint8Array(audioBytes.length)
+          for (let i = 0; i < audioBytes.length; i++) {
+            audioArray[i] = audioBytes.charCodeAt(i)
+          }
+          const audioBlob = new Blob([audioArray], { type: 'audio/mp3' })
+          const audioUrl = URL.createObjectURL(audioBlob)
+          const audio = new Audio(audioUrl)
+          
+          // Add bot message with both text and audio
+          const botMessage = {
+            id: Date.now() + 1,
+            text: data.text,
+            sender: 'bot',
+            timestamp: new Date(),
+            isVoice: true,
+            audioUrl: audioUrl
+          }
+          setMessages(prev => [...prev, botMessage])
+          
+          // Play audio response automatically
+          audio.play().catch(console.error)
+          
+          // Cleanup URL after audio ends
+          audio.onended = () => {
+            URL.revokeObjectURL(audioUrl)
+          }
+        } else {
+          throw new Error('Voice service unavailable')
+        }
+      } catch (error) {
+        console.error('Voice service error:', error)
+        // Fallback to text response via regular chat
+        await sendMessage(transcript)
+      } finally {
+        setIsSending(false)
+        setInputMessage('')
+      }
     }
     
     recognition.onerror = () => {
@@ -200,28 +250,31 @@ const Chat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const sendMessage = async () => {
-    if (!inputMessage.trim() || isSending) return
+  const sendMessage = async (messageText = null) => {
+    const textToSend = messageText || inputMessage.trim()
+    if (!textToSend || isSending) return
 
     const userMessage = {
       id: Date.now(),
-      text: inputMessage.trim(),
+      text: textToSend,
       sender: 'user',
-      timestamp: new Date()
+      timestamp: new Date(),
+      isVoice: !!messageText // true if called from voice recognition
     }
 
     setMessages(prev => [...prev, userMessage])
-    const messageText = inputMessage.trim()
-    setInputMessage('')
+    if (!messageText) setInputMessage('') // Only clear input if not from voice
     setIsSending(true)
 
     // Assess severity before sending
-    const severity = assessSeverity(messageText)
+    const severity = assessSeverity(textToSend)
 
     try {
+      let responseReceived = false
+
       // Send via both API and Socket.io
-      const apiPromise = post('/api/v1/chat/message', {
-        message: messageText,
+      const apiPromise = post('/v1/chat/message', {
+        message: textToSend,
         severity: severity,
         timestamp: new Date().toISOString()
       })
@@ -229,37 +282,74 @@ const Chat = () => {
       // Emit socket event for real-time response
       if (socketRef.current?.connected) {
         socketRef.current.emit('user_message', {
-          message: messageText,
+          message: textToSend,
           severity: severity,
           timestamp: new Date().toISOString()
         })
       }
 
-      // Wait for API response as backup
-      const response = await apiPromise
-      
-      // If socket didn't respond, use API response
-      if (response.data && !isTyping) {
-        const botMessage = {
-          id: Date.now() + 1,
-          text: response.data.message,
-          sender: 'bot',
-          timestamp: new Date(),
-          suggestedActions: response.data.suggestedActions || []
-        }
-        setMessages(prev => [...prev, botMessage])
+      try {
+        // Wait for API response as backup
+        const response = await apiPromise
+        
+        // If socket didn't respond, use API response
+        if (response.data && !isTyping) {
+          const botMessage = {
+            id: Date.now() + 1,
+            text: response.data.message,
+            sender: 'bot',
+            timestamp: new Date(),
+            suggestedActions: response.data.suggestedActions || []
+          }
+          setMessages(prev => [...prev, botMessage])
 
-        // Handle crisis escalation from API response
-        if (response.data.suggestedActions?.includes('crisis_escalation')) {
-          setCrisisModal({ isOpen: true, type: 'escalation' })
+          // Handle crisis escalation from API response
+          if (response.data.suggestedActions?.includes('crisis_escalation')) {
+            setCrisisModal({ isOpen: true, type: 'escalation' })
+          }
+          responseReceived = true
         }
+      } catch (serverError) {
+        console.warn('Main server unavailable, trying voice agent fallback:', serverError)
+        
+        // Fallback to voice agent for text response
+        try {
+          const voiceResponse = await fetch("http://localhost:8000/chat/text", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text: textToSend,
+              session_id: "user123"
+            })
+          })
+
+          if (voiceResponse.ok) {
+            const voiceData = await voiceResponse.json()
+            const botMessage = {
+              id: Date.now() + 1,
+              text: voiceData.text,
+              sender: 'bot',
+              timestamp: new Date(),
+              suggestedActions: []
+            }
+            setMessages(prev => [...prev, botMessage])
+            responseReceived = true
+          }
+        } catch (voiceError) {
+          console.error('Voice agent also unavailable:', voiceError)
+        }
+      }
+
+      // If no response received from any service, show error
+      if (!responseReceived) {
+        throw new Error('All services unavailable')
       }
 
     } catch (error) {
       console.error('Error sending message:', error)
       const errorMessage = {
         id: Date.now() + 2,
-        text: t('chat.sendError'),
+        text: 'Sorry, I\'m having trouble responding right now. Please try again in a moment.',
         sender: 'system',
         timestamp: new Date(),
         isError: true
@@ -280,16 +370,13 @@ const Chat = () => {
   const handleSuggestedAction = (action) => {
     switch (action) {
       case 'feeling_good':
-        setInputMessage("I'm feeling good today!")
-        setTimeout(() => sendMessage(), 100)
+        sendMessage("I'm feeling good today!")
         break
       case 'feeling_stressed':
-        setInputMessage("I'm feeling stressed and need some help.")
-        setTimeout(() => sendMessage(), 100)
+        sendMessage("I'm feeling stressed and need some help.")
         break
       case 'feeling_anxious':
-        setInputMessage("I'm feeling anxious and worried.")
-        setTimeout(() => sendMessage(), 100)
+        sendMessage("I'm feeling anxious and worried.")
         break
       case 'voice_mode':
         setIsVoiceMode(!isVoiceMode)
@@ -308,8 +395,7 @@ const Chat = () => {
         break
       default:
         // Send action as message
-        setInputMessage(action)
-        setTimeout(() => sendMessage(), 100)
+        sendMessage(action)
     }
   }
 
@@ -403,7 +489,23 @@ const Chat = () => {
             {/* Message Content */}
             <div className="text-sm leading-relaxed whitespace-pre-wrap">
               {message.text}
+              {/* Voice indicator */}
+              {message.isVoice && (
+                <span className="inline-flex items-center ml-2 text-xs">
+                  {message.sender === 'user' ? '🎤' : '🔊'}
+                </span>
+              )}
             </div>
+
+            {/* Audio Player for Voice Responses */}
+            {message.audioUrl && (
+              <div className="mt-2">
+                <audio controls className="w-full max-w-xs">
+                  <source src={message.audioUrl} type="audio/mp3" />
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            )}
 
             {/* Breathing Exercise Component */}
             {message.isBreathingExercise && (
