@@ -17,7 +17,7 @@ class TextToSpeech:
     Provides methods to generate, play, and save speech audio.
     """
 
-    def __init__(self, api_key: Optional[str] = None, voice: Optional[str] = "Rachel"):
+    def __init__(self, api_key: Optional[str] = None, voice: Optional[str] = "Xb7hH8MSUJpSbSDYk0k2"): # <-- CHANGED DEFAULT VOICE ID
         """
         Initialize the ElevenLabs client.
         :param api_key: ElevenLabs API key (defaults to ELEVENLABS_API_KEY env var).
@@ -35,15 +35,26 @@ class TextToSpeech:
         self.client = ElevenLabs(api_key=resolved_api_key)
         # --- END CORRECTION ---
 
+        # NOTE: The client's get_all() is now called successfully with the key.
+        # This part of the logic handles voice selection:
         available_voices = self.client.voices.get_all().voices
         
+        # Ensure the voice check uses the ID first, then name
         self.voice = voice
-        if not any(v.name == self.voice or v.voice_id == self.voice for v in available_voices):
+        voice_found = any(v.name == self.voice or v.voice_id == self.voice for v in available_voices)
+
+        if not voice_found:
             print(f"Warning: Voice '{self.voice}' not found. Falling back to the first available voice.")
             self.voice = available_voices[0].voice_id if available_voices else None
             if not self.voice:
                 raise ValueError("No voices available in your ElevenLabs account.")
-
+        # Ensure that if the voice was found by name, we store its ID for the API call
+        elif self.voice != "Alice": # Only check if the user/default passed a name
+             try:
+                self.voice = next(v.voice_id for v in available_voices if v.name == self.voice or v.voice_id == self.voice)
+             except StopIteration:
+                 # Should not happen due to the `any()` check above, but for safety
+                 pass 
 
     def synthesize(
         self,

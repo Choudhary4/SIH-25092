@@ -14,10 +14,11 @@ const Chat = () => {
   const [messages, setMessages] = useState([])
   const [inputMessage, setInputMessage] = useState('')
   const [isConnected, setIsConnected] = useState(false)
-  const [buddyAgentConnected, setBuddyAgentConnected] = useState(null) // null = unknown, true = connected, false = disconnected
+  const [buddyAgentConnected, setBuddyAgentConnected] = useState(null)
   const [isTyping, setIsTyping] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const [crisisModal, setCrisisModal] = useState({ isOpen: false, type: null })
+  const [isPlaying, setIsPlaying] = useState({}) // Track which audio is playing
   const messagesEndRef = useRef(null)
   const socketRef = useRef(null)
   const inputRef = useRef(null)
@@ -106,7 +107,7 @@ const Chat = () => {
         const buddyAgentUrl = import.meta.env.VITE_BUDDY_AGENT_URL || 'http://localhost:8000'
         const response = await fetch(`${buddyAgentUrl}/health`, { 
           method: 'GET',
-          signal: AbortSignal.timeout(3000) // 3 second timeout
+          signal: AbortSignal.timeout(3000)
         })
         setBuddyAgentConnected(response.ok)
         console.log('🏥 Buddy agent health check:', response.ok ? 'Connected' : 'Disconnected')
@@ -156,7 +157,7 @@ const Chat = () => {
     
     recognition.continuous = false
     recognition.interimResults = false
-    recognition.lang = 'en-US' // Can be changed based on user preference
+    recognition.lang = 'en-US'
     
     recognition.onstart = () => {
       setIsListening(true)
@@ -211,7 +212,6 @@ const Chat = () => {
             }
             const audioBlob = new Blob([audioArray], { type: 'audio/mp3' })
             const audioUrl = URL.createObjectURL(audioBlob)
-            const audio = new Audio(audioUrl)
             
             // Add bot message with both text and audio
             const botMessage = {
@@ -227,6 +227,9 @@ const Chat = () => {
             
             // Play audio response automatically
             console.log('▶️ Playing audio response...')
+            const audio = new Audio(audioUrl)
+            setIsPlaying(prev => ({ ...prev, [botMessage.id]: true }))
+            
             audio.play().catch(err => {
               console.error('❌ Audio playback error:', err)
             })
@@ -234,6 +237,7 @@ const Chat = () => {
             // Cleanup URL after audio ends
             audio.onended = () => {
               URL.revokeObjectURL(audioUrl)
+              setIsPlaying(prev => ({ ...prev, [botMessage.id]: false }))
               console.log('🗑️ Audio URL cleaned up')
             }
           } else {
@@ -264,7 +268,6 @@ const Chat = () => {
         }
         setMessages(prev => [...prev, errorMessage])
         
-        // Optionally fallback to text chat
         console.log('🔄 Could try fallback to regular text chat...')
       } finally {
         setIsSending(false)
@@ -333,11 +336,11 @@ const Chat = () => {
       text: textToSend,
       sender: 'user',
       timestamp: new Date(),
-      isVoice: !!messageText // true if called from voice recognition
+      isVoice: !!messageText
     }
 
     setMessages(prev => [...prev, userMessage])
-    if (!messageText) setInputMessage('') // Only clear input if not from voice
+    if (!messageText) setInputMessage('')
     setIsSending(true)
 
     // Assess severity before sending
@@ -368,8 +371,9 @@ const Chat = () => {
             console.log('✅ Voice agent response:', voiceData)
             setBuddyAgentConnected(true)
             
+            const botMessageId = Date.now() + 1
             const botMessage = {
-              id: Date.now() + 1,
+              id: botMessageId,
               text: voiceData.text,
               sender: 'bot',
               timestamp: new Date(),
@@ -389,10 +393,17 @@ const Chat = () => {
                 )
                 const audioUrl = URL.createObjectURL(audioBlob)
                 const audio = new Audio(audioUrl)
+                
+                setIsPlaying(prev => ({ ...prev, [botMessageId]: true }))
+                
                 audio.play().catch(err => {
                   console.error('❌ Audio playback error:', err)
                 })
-                audio.onended = () => URL.revokeObjectURL(audioUrl)
+                
+                audio.onended = () => {
+                  URL.revokeObjectURL(audioUrl)
+                  setIsPlaying(prev => ({ ...prev, [botMessageId]: false }))
+                }
               } catch (audioError) {
                 console.error('❌ Audio processing error:', audioError)
               }
@@ -544,7 +555,6 @@ const Chat = () => {
         window.location.href = '/booking'
         break
       default:
-        // Send action as message
         sendMessage(action)
     }
   }
@@ -591,18 +601,164 @@ const Chat = () => {
     }
   }
 
+  // VOICE-ONLY UI RENDER MESSAGE FUNCTION
   const renderMessage = (message) => {
     const isUser = message.sender === 'user'
     const isSystem = message.sender === 'system'
     const isBot = message.sender === 'bot'
 
+    // Voice-only mode special rendering for bot messages
+    if (isVoiceMode && isBot && !message.suggestedActions?.length && !message.isBreathingExercise) {
+      return (
+        <div
+          key={message.id}
+          className="flex justify-start mb-6"
+        >
+          <div className="max-w-[80%] order-1">
+            {/* Voice Assistant Avatar */}
+            <div className="flex items-center mb-4">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 via-blue-500 to-teal-500 flex items-center justify-center mr-4 shadow-xl voice-avatar">
+                  <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center">
+                    {(message.audioBase64 || message.audioUrl) && isPlaying[message.id] ? (
+                      // Animated speaking bars
+                      <div className="flex items-center space-x-1">
+                        {[...Array(5)].map((_, i) => (
+                          <div
+                            key={i}
+                            className="w-1 bg-gradient-to-t from-purple-600 to-blue-600 rounded-full speaking-bar"
+                            style={{
+                              height: '4px',
+                              animationDelay: `${i * 0.1}s`,
+                              animation: 'voiceBounce 1.2s ease-in-out infinite'
+                            }}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                      </svg>
+                    )}
+                  </div>
+                  {/* Glow effect when speaking */}
+                  {(message.audioBase64 || message.audioUrl) && isPlaying[message.id] && (
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400 to-blue-400 opacity-20 animate-ping" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center">
+                    <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                      Buddy
+                    </span>
+                    <div className="ml-2 flex items-center">
+                      <div className={`w-2 h-2 rounded-full mr-1 ${
+                        (message.audioBase64 || message.audioUrl) && isPlaying[message.id] 
+                          ? 'bg-green-500 animate-pulse' 
+                          : 'bg-blue-500'
+                      }`} />
+                      <span className="text-xs text-gray-600">
+                        {(message.audioBase64 || message.audioUrl) && isPlaying[message.id] 
+                          ? 'Speaking...' 
+                          : 'Ready'
+                        }
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Voice Response Card - NO TEXT BUBBLE */}
+            <div className="relative">
+              <div className="voice-response-card bg-gradient-to-br from-purple-50 via-blue-50 to-teal-50 border-2 border-purple-200 rounded-3xl p-8 shadow-2xl">
+                <div className="text-center">
+                  {/* Main Audio Waveform */}
+                  <div className="flex items-center justify-center space-x-3 mb-6">
+                    {[...Array(8)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="w-3 bg-gradient-to-t from-purple-400 via-blue-500 to-teal-500 rounded-full waveform-bar"
+                        style={{
+                          height: `${20 + Math.sin(i * 0.8) * 15}px`,
+                          animationDelay: `${i * 0.15}s`
+                        }}
+                      />
+                    ))}
+                  </div>
+                  
+                  {/* Status Text */}
+                  <div className="mb-4">
+                    <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
+                      🎵 Audio Response
+                    </h3>
+                    <p className="text-purple-700 text-lg font-medium">
+                      {(message.audioBase64 || message.audioUrl) && isPlaying[message.id] 
+                        ? '🔊 Playing your response...' 
+                        : '✨ Ready to speak'
+                      }
+                    </p>
+                  </div>
+
+                  {/* Decorative elements */}
+                  <div className="flex justify-center space-x-4 mb-4">
+                    <div className="w-12 h-1 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full"></div>
+                    <div className="w-8 h-1 bg-gradient-to-r from-blue-400 to-teal-400 rounded-full"></div>
+                    <div className="w-12 h-1 bg-gradient-to-r from-teal-400 to-purple-400 rounded-full"></div>
+                  </div>
+                </div>
+
+                {/* Hidden Auto-playing Audio */}
+                {(message.audioUrl || message.audioBase64) && (
+                  <div className="mt-6">
+                    <audio 
+                      controls 
+                      autoPlay 
+                      className="w-full rounded-xl opacity-80 scale-95 transform hover:scale-100 transition-transform"
+                      style={{ 
+                        filter: 'sepia(0.2) hue-rotate(240deg) saturate(1.5)',
+                        background: 'linear-gradient(45deg, #f3e8ff, #e0f2fe)'
+                      }}
+                      onPlay={() => setIsPlaying(prev => ({ ...prev, [message.id]: true }))}
+                      onEnded={() => setIsPlaying(prev => ({ ...prev, [message.id]: false }))}
+                      onPause={() => setIsPlaying(prev => ({ ...prev, [message.id]: false }))}
+                    >
+                      {message.audioUrl && (
+                        <source src={message.audioUrl} type="audio/mp3" />
+                      )}
+                      {message.audioBase64 && (
+                        <source 
+                          src={`data:audio/mp3;base64,${message.audioBase64}`} 
+                          type="audio/mp3" 
+                        />
+                      )}
+                      Your browser does not support the audio element.
+                    </audio>
+                  </div>
+                )}
+
+                {/* Timestamp */}
+                <div className="mt-4 text-sm text-purple-500 text-center font-medium">
+                  {message.timestamp.toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // Regular rendering for user messages, system messages, and text mode
     return (
       <div
         key={message.id}
         className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}
       >
         <div className={`max-w-[70%] ${isUser ? 'order-2' : 'order-1'}`}>
-          {/* Avatar */}
+          {/* Avatar for non-user messages */}
           {!isUser && (
             <div className="flex items-center mb-2">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
@@ -647,8 +803,8 @@ const Chat = () => {
               )}
             </div>
 
-            {/* Audio Player for Voice Responses */}
-            {(message.audioUrl || message.audioBase64) && (
+            {/* Audio Player for Voice Responses in text mode */}
+            {!isVoiceMode && (message.audioUrl || message.audioBase64) && (
               <div className="mt-2">
                 <audio controls className="w-full max-w-xs">
                   {message.audioUrl && (
@@ -718,6 +874,101 @@ const Chat = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-teal-50 to-blue-100">
+      {/* Custom CSS Styles */}
+      <style jsx>{`
+        /* Voice-only UI Animations */
+        .voice-response-card {
+          animation: voicePulse 3s ease-in-out infinite;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .voice-response-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.1), transparent);
+          animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes voicePulse {
+          0%, 100% {
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+            transform: scale(1);
+          }
+          50% {
+            box-shadow: 0 0 40px rgba(168, 85, 247, 0.6);
+            transform: scale(1.02);
+          }
+        }
+
+        @keyframes shimmer {
+          0% {
+            left: -100%;
+          }
+          100% {
+            left: 100%;
+          }
+        }
+
+        .voice-avatar {
+          animation: avatarGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes avatarGlow {
+          0%, 100% {
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+          }
+          50% {
+            box-shadow: 0 0 25px rgba(168, 85, 247, 0.8);
+          }
+        }
+
+        .speaking-bar, .waveform-bar {
+          animation: voiceBounce 1.5s ease-in-out infinite;
+        }
+
+        @keyframes voiceBounce {
+          0%, 80%, 100% {
+            height: 4px;
+            opacity: 0.6;
+          }
+          40% {
+            height: 20px;
+            opacity: 1;
+          }
+        }
+
+        .waveform-bar {
+          animation: waveformDance 2s ease-in-out infinite;
+        }
+
+        @keyframes waveformDance {
+          0%, 100% {
+            transform: scaleY(0.4);
+            opacity: 0.7;
+          }
+          50% {
+            transform: scaleY(1.2);
+            opacity: 1;
+          }
+        }
+
+        /* Enhanced Audio Player Styling */
+        audio {
+          border-radius: 12px;
+          background: linear-gradient(135deg, #f3e8ff 0%, #e0f2fe 100%);
+          border: 2px solid rgba(168, 85, 247, 0.2);
+        }
+
+        audio::-webkit-media-controls-panel {
+          background: linear-gradient(135deg, #f3e8ff 0%, #e0f2fe 100%);
+        }
+      `}</style>
+
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
@@ -749,10 +1000,10 @@ const Chat = () => {
           <div className="flex items-center space-x-3">
             <button
               onClick={() => setIsVoiceMode(!isVoiceMode)}
-              className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
                 isVoiceMode
-                  ? 'bg-teal-100 text-teal-700 border border-teal-200'
-                  : 'bg-gray-100 text-gray-700 border border-gray-200'
+                  ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
               }`}
             >
               {isVoiceMode ? '🎤 Voice Mode' : '💬 Text Mode'}
@@ -789,25 +1040,39 @@ const Chat = () => {
         <div className="max-w-4xl mx-auto">
           {messages.map(renderMessage)}
           
-          {/* Typing Indicator */}
+          {/* Typing Indicator for Voice Mode */}
           {isTyping && (
             <div className="flex justify-start mb-4">
               <div className="max-w-[70%]">
                 <div className="flex items-center mb-2">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-2">
-                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center mr-3 animate-pulse">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <span className="text-xs text-gray-500">{t('chat.aiAssistant')}</span>
+                  <span className="text-sm text-gray-500 font-medium">Buddy is thinking...</span>
                 </div>
-                <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-sm">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                {isVoiceMode ? (
+                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-2xl px-6 py-4 shadow-lg">
+                    <div className="flex justify-center space-x-2">
+                      {[...Array(5)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="w-2 h-8 bg-gradient-to-t from-purple-400 to-blue-400 rounded-full animate-bounce"
+                          style={{ animationDelay: `${i * 0.1}s` }}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-sm">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -840,20 +1105,20 @@ const Chat = () => {
               <button
                 onClick={startVoiceRecognition}
                 disabled={isListening}
-                className={`p-3 rounded-full transition-all duration-200 ${
+                className={`p-4 rounded-full transition-all duration-300 transform hover:scale-110 ${
                   isListening
-                    ? 'bg-red-500 text-white animate-pulse'
-                    : 'bg-teal-500 text-white hover:bg-teal-600 shadow-lg hover:shadow-xl transform hover:scale-105'
+                    ? 'bg-red-500 text-white animate-pulse shadow-2xl'
+                    : 'bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600 shadow-xl'
                 }`}
                 aria-label="Voice input"
               >
                 {isListening ? (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
                   </svg>
                 ) : (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                   </svg>
                 )}
