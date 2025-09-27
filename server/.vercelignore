@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+
+# Environment files (will be configured in Vercel dashboard)
+.env
+.env.local
+.env.development
+.env.production
+
+# Test files
+tests/
+*.test.js
+test-*.js
+
+# Development files
+nodemon.json
+.eslintrc.js
+.eslintrc.json
+
+# Documentation
+*.md
+docs/
+
+# Git
+.git/
+.gitignore
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Cache
+.cache/
+.tmp/
