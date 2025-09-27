@@ -873,7 +873,7 @@ const Chat = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-teal-50 to-blue-100">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-orange-50 to-yellow-50" style={{ backgroundColor: '#F9F7F4' }}>
       {/* Custom CSS Styles */}
       <style jsx>{`
         /* Voice-only UI Animations */
@@ -973,7 +973,7 @@ const Chat = () => {
       <div className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <div className="w-12 h-12 bg-gradient-to-r from-teal-600 to-blue-600 rounded-full flex items-center justify-center mr-3">
+            <div className="w-12 h-12 bg-teal-800 rounded-full flex items-center justify-center mr-3">
               <span className="text-white font-bold text-lg">🤖</span>
             </div>
             <div>
@@ -981,10 +981,10 @@ const Chat = () => {
                 Buddy - Your Mental Health Companion
               </h1>
               <div className="flex items-center text-sm text-gray-500">
-                <div className={`w-2 h-2 rounded-full mr-2 ${
+                {/* <div className={`w-2 h-2 rounded-full mr-2 ${
                   isConnected ? 'bg-green-400' : 'bg-red-400'
-                }`} />
-                Server: {isConnected ? 'Online' : 'Offline'} • 
+                }`} /> */}
+                {/* Server: {isConnected ? 'Online' : 'Offline'} •  */}
                 <div className={`w-2 h-2 rounded-full mx-2 ${
                   buddyAgentConnected === true ? 'bg-green-400' : 
                   buddyAgentConnected === false ? 'bg-red-400' : 'bg-yellow-400'
@@ -1002,7 +1002,7 @@ const Chat = () => {
               onClick={() => setIsVoiceMode(!isVoiceMode)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
                 isVoiceMode
-                  ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
+                  ? 'bg-teal-800 text-white shadow-lg hover:bg-teal-900'
                   : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
               }`}
             >
@@ -1053,12 +1053,12 @@ const Chat = () => {
                   <span className="text-sm text-gray-500 font-medium">Buddy is thinking...</span>
                 </div>
                 {isVoiceMode ? (
-                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-2xl px-6 py-4 shadow-lg">
+                  <div className="bg-gray-50 border-2 border-teal-200 rounded-2xl px-6 py-4 shadow-lg">
                     <div className="flex justify-center space-x-2">
                       {[...Array(5)].map((_, i) => (
                         <div
                           key={i}
-                          className="w-2 h-8 bg-gradient-to-t from-purple-400 to-blue-400 rounded-full animate-bounce"
+                          className="w-2 h-8 bg-gradient-to-t from-teal-600 to-teal-800 rounded-full animate-bounce"
                           style={{ animationDelay: `${i * 0.1}s` }}
                         />
                       ))}
@@ -1108,7 +1108,7 @@ const Chat = () => {
                 className={`p-4 rounded-full transition-all duration-300 transform hover:scale-110 ${
                   isListening
                     ? 'bg-red-500 text-white animate-pulse shadow-2xl'
-                    : 'bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600 shadow-xl'
+                    : 'bg-teal-800 text-white hover:bg-teal-900 shadow-xl'
                 }`}
                 aria-label="Voice input"
               >
@@ -1130,7 +1130,7 @@ const Chat = () => {
               disabled={!inputMessage.trim() || isSending || !isConnected}
               className={`p-3 rounded-full transition-all duration-200 ${
                 inputMessage.trim() && !isSending && isConnected
-                  ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white hover:from-teal-700 hover:to-blue-700 shadow-lg hover:shadow-xl transform hover:scale-105'
+                  ? 'bg-teal-800 text-white hover:bg-teal-900 shadow-lg hover:shadow-xl transform hover:scale-105'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
               aria-label="Send message"
