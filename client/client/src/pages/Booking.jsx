@@ -275,17 +275,17 @@ const Booking = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: '#F9F7F4' }}>
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-4xl font-bold text-teal-800 mb-2">
             Counsellor Talk
           </h1>
           <p className="text-lg text-gray-600 mb-4">Professional Support System - Direct access to certified counsellors</p>
           
           {/* Flow Explanation */}
-          <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 mb-6 border border-green-200 max-w-4xl mx-auto">
+          <div className="rounded-xl p-6 mb-6 border border-gray-200 max-w-4xl mx-auto" style={{ backgroundColor: '#F9E6D0' }}>
             <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center justify-center">
               <span className="mr-2">👨‍⚕️</span>
               How Counsellor Talk Works
@@ -322,14 +322,14 @@ const Booking = () => {
               <div key={stepNumber} className="flex items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                   step >= stepNumber 
-                    ? 'bg-indigo-600 text-white' 
+                    ? 'bg-teal-800 text-white' 
                     : 'bg-gray-200 text-gray-600'
                 }`}>
                   {stepNumber}
                 </div>
                 {stepNumber < 3 && (
                   <div className={`w-16 h-1 mx-2 ${
-                    step > stepNumber ? 'bg-indigo-600' : 'bg-gray-200'
+                    step > stepNumber ? 'bg-teal-800' : 'bg-gray-200'
                   }`} />
                 )}
               </div>
@@ -369,7 +369,7 @@ const Booking = () => {
             <div className="px-6 py-4 border-b border-gray-200">
               <button
                 onClick={goBack}
-                className="flex items-center text-indigo-600 hover:text-indigo-700 transition-colors"
+                className="flex items-center text-teal-800 hover:text-teal-900 transition-colors"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -470,11 +470,11 @@ const CounsellorSelection = ({ counsellors, loading, onSelect, t }) => {
             key={counsellor.id}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all"
+            className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-teal-800 hover:shadow-md transition-all"
             onClick={() => onSelect(counsellor)}
           >
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
                 {counsellor.profileImage ? (
                   <img
                     src={counsellor.profileImage}
@@ -482,7 +482,7 @@ const CounsellorSelection = ({ counsellors, loading, onSelect, t }) => {
                     className="w-12 h-12 rounded-full object-cover"
                   />
                 ) : (
-                  <svg className="w-6 h-6 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-6 h-6 text-teal-800" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                   </svg>
                 )}
