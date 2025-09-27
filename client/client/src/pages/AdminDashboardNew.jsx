@@ -1,15 +1,75 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import logoImage from '../assets/Mann-mitra.png'
-import { useEnhancedApi } from '../hooks/useEnhancedApi.js'
-import RateLimitNotification from '../components/common/RateLimitNotification'
-import RateLimitStatusIndicator from '../components/common/RateLimitStatusIndicator'
+import logoImage from '../assets/Mann-mitra.png' // Assuming this path is correct
+
+// Mock API Call function to replace useEnhancedApi's apiCall
+// In a real application, you'd replace the body of this with your actual fetch logic
+const mockApiCall = async (url, method, body = null) => {
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 500))
+
+  try {
+    const token = localStorage.getItem('token')
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': token ? `Bearer ${token}` : ''
+    }
+
+    const config = {
+      method: method,
+      headers: headers,
+      body: body ? JSON.stringify(body) : undefined
+    }
+
+    // Replace the real fetch with mock data for simplicity if the backend is not set up
+    if (url === '/api/v1/admin/overview') {
+      return {
+        success: true,
+        data: {
+          overview: {
+            totalUsers: 3450,
+            activeCounsellors: 42,
+            todayAppointments: 12,
+            crisisAlerts: 3
+          }
+        }
+      }
+    } else if (url === '/api/v1/admin/counsellors') {
+      return {
+        success: true,
+        data: [
+          { id: 101, name: 'Dr. Priya Sharma', email: 'priya@mannmitra.com', department: 'Psychology', specialization: 'Child Counseling', isActive: true },
+          { id: 102, name: 'Mr. Vivek Singh', email: 'vivek@mannmitra.com', department: 'Social Work', specialization: 'Substance Abuse', isActive: false },
+          { id: 103, name: 'Dr. Anita Rao', email: 'anita@mannmitra.com', department: 'Mental Health', specialization: 'Anxiety', isActive: true },
+        ]
+      }
+    }
+
+    // Fallback for actual fetch if mock data doesn't cover the URL
+    // const response = await fetch(url, config)
+    // const data = await response.json()
+    
+    // if (!response.ok) {
+    //   throw new Error(data.message || `API call to ${url} failed with status ${response.status}`)
+    // }
+
+    // return { success: true, data: data }
+    return { success: false, error: `Mock: Unknown API endpoint: ${url}` }
+
+  } catch (error) {
+    return { success: false, error: error.message || 'Network error' }
+  }
+}
+
+// Helper to fetch the token from localStorage
+const getToken = () => localStorage.getItem('token')
 
 const AdminDashboardNew = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { apiCall, loading, error, rateLimitError, retryCount, clearRateLimitError } = useEnhancedApi()
+  // Removed: const { apiCall, loading, error, rateLimitError, retryCount, clearRateLimitError } = useEnhancedApi()
+  
   const [activeTab, setActiveTab] = useState('overview')
   const [counsellors, setCounsellors] = useState([])
   const [dashboardData, setDashboardData] = useState(null)
@@ -17,59 +77,65 @@ const AdminDashboardNew = () => {
   const [showAddCounsellor, setShowAddCounsellor] = useState(false)
   const [apiError, setApiError] = useState(null)
 
-  // Fetch dashboard data
+  // Fetch dashboard data and counsellors on tab change
   useEffect(() => {
-    fetchDashboardData()
-    if (activeTab === 'counsellors') {
+    // Clear old errors when tab changes
+    setApiError(null)
+
+    if (activeTab === 'overview') {
+      fetchDashboardData()
+    } else if (activeTab === 'counsellors') {
       fetchCounsellors()
+    } else {
+      setIsLoading(false)
     }
   }, [activeTab])
+
+  // Initial data fetch on mount
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
 
   const fetchDashboardData = async () => {
     setIsLoading(true)
     setApiError(null)
     
+    // Replacing apiCall with mockApiCall
     try {
-      const result = await apiCall('/api/v1/admin/overview', 'GET')
+      const result = await mockApiCall('/api/v1/admin/overview', 'GET')
       
       if (result.success) {
         setDashboardData(result.data)
-      } else if (!result.isRateLimit) {
+      } else {
         setApiError(result.error || 'Failed to fetch dashboard data')
       }
     } catch (err) {
-      if (err.status !== 429) { // Don't show regular error for rate limits
-        setApiError(err.message || 'Failed to fetch dashboard data')
-      }
+      setApiError(err.message || 'Failed to fetch dashboard data')
     } finally {
       setIsLoading(false)
     }
   }
 
   const fetchCounsellors = async () => {
+    // Note: This is now called via the useEffect upon tab change, so the initial setIsLoading should happen outside or be managed to avoid double-loading.
+    // We'll only set API error here, keeping isLoading to false if it was already resolved by fetchDashboardData
+    setApiError(null)
+
+    // Replacing apiCall with mockApiCall
     try {
-      const result = await apiCall('/api/v1/admin/counsellors', 'GET')
+      const result = await mockApiCall('/api/v1/admin/counsellors', 'GET')
       
       if (result.success) {
         setCounsellors(result.data)
-      } else if (!result.isRateLimit) {
+      } else {
         setApiError(result.error || 'Failed to fetch counsellors')
       }
     } catch (err) {
-      if (err.status !== 429) { // Don't show regular error for rate limits
-        setApiError(err.message || 'Failed to fetch counsellors')
-      }
+      setApiError(err.message || 'Failed to fetch counsellors')
     }
   }
-
-  const handleRetryAfterRateLimit = () => {
-    clearRateLimitError()
-    if (activeTab === 'overview') {
-      fetchDashboardData()
-    } else if (activeTab === 'counsellors') {
-      fetchCounsellors()
-    }
-  }
+  
+  // Removed handleRetryAfterRateLimit as rate limit handling is gone
 
   const tabs = [
     { id: 'overview', name: 'Dashboard Overview', icon: '📊' },
@@ -112,7 +178,7 @@ const AdminDashboardNew = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <RateLimitStatusIndicator endpoint="/api/v1/admin/overview" />
+              {/* Removed RateLimitStatusIndicator */}
               <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
                 Generate Report
               </button>
@@ -143,16 +209,8 @@ const AdminDashboardNew = () => {
         </div>
       </div>
 
-      {/* Rate Limit Notification */}
-      {rateLimitError && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-          <RateLimitNotification
-            error={rateLimitError}
-            onRetry={handleRetryAfterRateLimit}
-            onDismiss={clearRateLimitError}
-          />
-        </div>
-      )}
+      {/* Removed Rate Limit Notification */}
+      {/* Rate Limit Notification UI removed */}
 
       {/* Error Notification */}
       {apiError && (
@@ -336,8 +394,9 @@ const CounsellorRow = ({ counsellor, onRefresh }) => {
 
   const toggleStatus = async () => {
     try {
-      const token = localStorage.getItem('token')
-      await fetch(`/api/v1/admin/counsellors/${counsellor.id}/status`, {
+      // Using standard fetch and getToken helper
+      const token = getToken()
+      const response = await fetch(`/api/v1/admin/counsellors/${counsellor.id}/status`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -345,9 +404,15 @@ const CounsellorRow = ({ counsellor, onRefresh }) => {
         },
         body: JSON.stringify({ isActive: !counsellor.isActive })
       })
+
+      if (!response.ok) {
+        throw new Error('Failed to toggle status')
+      }
+
       onRefresh()
     } catch (error) {
       console.error('Error toggling counsellor status:', error)
+      alert(`Error: ${error.message}`) // Simple error display
     }
   }
 
@@ -422,7 +487,8 @@ const AddCounsellorForm = ({ onClose, onSuccess }) => {
     setError('')
 
     try {
-      const token = localStorage.getItem('token')
+      // Using standard fetch and getToken helper
+      const token = getToken()
       const response = await fetch('/api/v1/admin/counsellors', {
         method: 'POST',
         headers: {
@@ -434,14 +500,14 @@ const AddCounsellorForm = ({ onClose, onSuccess }) => {
 
       const data = await response.json()
 
-      if (data.success) {
+      if (response.ok && data.success) { // Check both HTTP status and API response success flag
         onSuccess()
       } else {
         setError(data.message || 'Failed to create counsellor')
       }
     } catch (error) {
       console.error('Error creating counsellor:', error)
-      setError('Failed to create counsellor')
+      setError('Failed to create counsellor due to a network or server issue.')
     } finally {
       setIsLoading(false)
     }
@@ -567,7 +633,7 @@ const AddCounsellorForm = ({ onClose, onSuccess }) => {
   )
 }
 
-// Peer Approval Tab Component
+// Peer Approval Tab Component (No changes needed, already uses local state)
 const PeerApprovalTab = () => {
   const [pendingPeers, setPendingPeers] = useState([
     {
@@ -707,7 +773,7 @@ const PeerApprovalTab = () => {
   )
 }
 
-// Enhanced Student Analytics Tab Component
+// Student Analytics Tab Component (No changes needed, already uses local state)
 const StudentAnalyticsTab = () => {
   const [analyticsData] = useState({
     overview: {
@@ -881,7 +947,7 @@ const StudentAnalyticsTab = () => {
   )
 }
 
-// Enhanced Crisis Management Tab Component
+// Enhanced Crisis Management Tab Component (No changes needed, already uses local state)
 const CrisisManagementTab = () => {
   const [crisisAlerts] = useState([
     {
@@ -1090,7 +1156,7 @@ const CrisisManagementTab = () => {
   )
 }
 
-// Enhanced Reports Tab Component
+// Enhanced Reports Tab Component (No changes needed, already uses local state)
 const ReportsTab = () => {
   const [selectedReportType, setSelectedReportType] = useState('mental-health')
   const [dateRange, setDateRange] = useState('last-30-days')
@@ -1306,7 +1372,7 @@ const ReportsTab = () => {
   )
 }
 
-// Course Management Tab Component
+// Course Management Tab Component (No changes needed, already uses local state)
 const CourseManagementTab = () => {
   const [showAddCourseForm, setShowAddCourseForm] = useState(false)
   const [courses, setCourses] = useState([
@@ -1417,7 +1483,7 @@ const CourseManagementTab = () => {
   )
 }
 
-// Add Course Form Component
+// Add Course Form Component (No changes needed, already uses local state)
 const AddCourseForm = ({ onClose, onSave }) => {
   const [formData, setFormData] = useState({
     title: '',
