@@ -244,7 +244,7 @@ const createForumPost = async (req, res, next) => {
     await post.populate('studentId', 'name collegeId');
 
     // Prepare response based on content analysis
-    let responseMessage = 'Post created successfully';
+    let responseMessage = 'Post created and published successfully';
     let warningMessage = null;
 
     if (contentAnalysis.recommendedStatus === 'flagged') {
