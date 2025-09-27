@@ -36,6 +36,7 @@ const sendTokenResponse = (user, statusCode, res, message) => {
         id: user._id,
         email: user.email,
         name: user.name,
+        anonymousDisplayName: user.anonymousDisplayName,
         collegeId: user.collegeId,
         role: user.role,
         languagePref: user.languagePref,
@@ -160,6 +161,12 @@ const login = async (req, res, next) => {
     // Update last login
     await user.updateLastLogin();
 
+    // Ensure anonymousDisplayName is generated if it doesn't exist
+    if (!user.anonymousDisplayName) {
+      user.anonymousDisplayName = user.generateAnonymousDisplayName();
+      await user.save();
+    }
+
     sendTokenResponse(user, 200, res, 'Login successful');
 
   } catch (error) {
@@ -199,13 +206,13 @@ const logout = async (req, res, next) => {
 // @access  Private
 const getMe = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id);
+    // req.user is already the full user object from auth middleware
+    const user = req.user;
     
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
+    // Ensure anonymousDisplayName is generated if it doesn't exist
+    if (!user.anonymousDisplayName) {
+      user.anonymousDisplayName = user.generateAnonymousDisplayName();
+      await user.save();
     }
 
     res.status(200).json({

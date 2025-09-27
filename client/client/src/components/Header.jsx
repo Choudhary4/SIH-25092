@@ -89,7 +89,7 @@ const Header = () => {
                   aria-expanded={isDropdownOpen}
                 >
                   <FiUser className="w-6 h-6" />
-                  <span className="hidden md:block">{user?.firstName || 'User'}</span>
+                  <span className="hidden md:block">{user?.anonymousDisplayName || 'User'}</span>
                 </button>
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">

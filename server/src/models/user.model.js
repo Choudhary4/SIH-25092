@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -80,6 +81,12 @@ const userSchema = new mongoose.Schema({
   },
   lastLogin: {
     type: Date
+  },
+  // Anonymous display name for public interactions
+  anonymousDisplayName: {
+    type: String,
+    trim: true,
+    maxlength: [30, 'Anonymous display name must not exceed 30 characters']
   }
 }, {
   timestamps: true, // Automatically manage createdAt and updatedAt
@@ -110,11 +117,42 @@ userSchema.pre('save', async function(next) {
   }
 });
 
-// Pre-save hook to update the updatedAt field
+// Pre-save hook to generate anonymous display name and update updatedAt field
 userSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
+  
+  // Generate anonymous display name if it doesn't exist
+  if (!this.anonymousDisplayName && this.isNew) {
+    this.anonymousDisplayName = this.generateAnonymousDisplayName();
+  }
+  
   next();
 });
+
+// Instance method to generate anonymous display name
+userSchema.methods.generateAnonymousDisplayName = function() {
+  const adjectives = [
+    'Wise', 'Brave', 'Kind', 'Calm', 'Hope', 'Joy', 'Peace', 'Star', 'Moon', 'Sun',
+    'Ocean', 'Sky', 'Forest', 'River', 'Wind', 'Light', 'Dream', 'Spirit', 'Soul', 'Heart',
+    'Gentle', 'Strong', 'Swift', 'Bright', 'Silent', 'Mystic', 'Noble', 'Pure', 'Free', 'Bold'
+  ];
+  
+  const nouns = [
+    'Seeker', 'Walker', 'Guide', 'Friend', 'Helper', 'Listener', 'Healer', 'Guardian', 'Companion', 'Voyager',
+    'Dreamer', 'Thinker', 'Writer', 'Artist', 'Explorer', 'Wanderer', 'Scholar', 'Student', 'Teacher', 'Mentor',
+    'Phoenix', 'Eagle', 'Dove', 'Butterfly', 'Lotus', 'Rose', 'Willow', 'Oak', 'Pine', 'Maple'
+  ];
+  
+  // Generate consistent but anonymous name using user ID as seed
+  const seed = this._id.toString();
+  const hash = crypto.createHash('md5').update(seed).digest('hex');
+  
+  const adjIndex = parseInt(hash.substring(0, 2), 16) % adjectives.length;
+  const nounIndex = parseInt(hash.substring(2, 4), 16) % nouns.length;
+  const number = parseInt(hash.substring(4, 6), 16) % 1000;
+  
+  return `${adjectives[adjIndex]}${nouns[nounIndex]}${number.toString().padStart(3, '0')}`;
+};
 
 // Instance method to compare password
 userSchema.methods.comparePassword = async function(plainPassword) {
