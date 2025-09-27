@@ -52,6 +52,11 @@ const userSchema = new mongoose.Schema({
     trim: true,
     maxlength: [200, 'Specialization must not exceed 200 characters']
   },
+  department: {
+    type: String,
+    trim: true,
+    maxlength: [100, 'Department must not exceed 100 characters']
+  },
   profileImage: {
     type: String,
     trim: true
@@ -66,6 +71,51 @@ const userSchema = new mongoose.Schema({
     type: Number,
     min: 0,
     default: null
+  },
+  // Counsellor availability schedule
+  availability: {
+    type: [{
+      dayOfWeek: {
+        type: Number, // 0 = Sunday, 1 = Monday, etc.
+        required: true,
+        min: 0,
+        max: 6
+      },
+      startTime: {
+        type: String, // Format: "HH:mm" (24-hour)
+        required: true,
+        match: /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/
+      },
+      endTime: {
+        type: String, // Format: "HH:mm" (24-hour)
+        required: true,
+        match: /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/
+      },
+      isActive: {
+        type: Boolean,
+        default: true
+      }
+    }],
+    default: []
+  },
+  // Admin who created this counsellor account
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: function() {
+      return this.role === 'counsellor';
+    }
+  },
+  // Additional fields for admin accounts
+  phoneNumber: {
+    type: String,
+    trim: true,
+    match: [/^[0-9]{10}$/, 'Please provide a valid 10-digit phone number']
+  },
+  collegeCode: {
+    type: String,
+    trim: true,
+    maxlength: [50, 'College code must not exceed 50 characters']
   },
   createdAt: {
     type: Date,

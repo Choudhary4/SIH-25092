@@ -158,8 +158,31 @@ const Login = () => {
               </Link>
             </p>
           </div>
-        </div>
 
+          {/* Admin and Counsellor Login Links */}
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <p className="text-center text-sm text-gray-500 mb-4">
+              Staff Access
+            </p>
+            <div className="flex justify-center space-x-4">
+              <Link
+                to="/admin/login"
+                className="text-sm text-red-600 hover:text-red-800 font-medium flex items-center space-x-1"
+              >
+                <span>🔒</span>
+                <span>Admin Login</span>
+              </Link>
+              <span className="text-gray-300">|</span>
+              <Link
+                to="/counsellor/login"
+                className="text-sm text-green-600 hover:text-green-800 font-medium flex items-center space-x-1"
+              >
+                <span>🧑‍⚕️</span>
+                <span>Counsellor Login</span>
+              </Link>
+            </div>
+          </div>
+        </div>
 
       </div>
     </div>

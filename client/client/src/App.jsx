@@ -5,6 +5,9 @@ import ErrorBoundary from './components/ErrorBoundary'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import AdminLogin from './pages/AdminLogin'
+import AdminSignup from './pages/AdminSignup'
+import CounsellorLogin from './pages/CounsellorLogin'
 import Screening from './pages/Screening'
 import Chat from './pages/Chat'
 import Booking from './pages/Booking'
@@ -13,6 +16,8 @@ import SimpleForum from './pages/SimpleForum'
 import Moderator from './pages/Moderator'
 import Admin from './pages/Admin'
 import AdminDashboard from './pages/AdminDashboard'
+import AdminDashboardNew from './pages/AdminDashboardNew'
+import CounsellorDashboard from './pages/CounsellorDashboard'
 import NotFound from './pages/NotFound'
 import About from './pages/About'
 import Resources from './pages/Resources'
@@ -28,6 +33,13 @@ function App() {
         {/* Auth routes - no header */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/signup" element={<AdminSignup />} />
+        <Route path="/counsellor/login" element={<CounsellorLogin />} />
+        
+        {/* Dashboard routes - no header */}
+        <Route path="/admin/dashboard" element={<AdminDashboardNew />} />
+        <Route path="/counsellor/dashboard" element={<CounsellorDashboard />} />
         
         {/* Main app routes - with header */}
         <Route path="/*" element={
@@ -43,7 +55,6 @@ function App() {
                 <Route path="/forum" element={<ErrorBoundary><Forum /></ErrorBoundary>} />
                 <Route path="/moderator" element={<Moderator />} />
                 <Route path="/admin" element={<Admin />} />
-                <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 <Route path='/about' element={<About />} />
                 <Route path='/resources' element = {<Resources/>} />
                 <Route path="*" element={<NotFound />} />

@@ -1,3 +1,4 @@
+const { validationResult } = require('express-validator');
 const User = require('../models/user.model');
 const Screening = require('../models/screening.model');
 const Appointment = require('../models/appointment.model');
@@ -598,8 +599,418 @@ const getCrisisDashboard = async (req, res, next) => {
   }
 };
 
+// @desc    Create new counsellor account
+// @route   POST /api/v1/admin/counsellors
+// @access  Private (admin only)
+const createCounsellor = async (req, res, next) => {
+  try {
+    const {
+      name,
+      email,
+      department,
+      specialization,
+      experience,
+      availability,
+      password
+    } = req.body;
+
+    // Check if counsellor email already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'User with this email already exists'
+      });
+    }
+
+    // Generate counsellor ID (for collegeId field)
+    const counsellorCount = await User.countDocuments({ role: 'counsellor' });
+    const counsellorId = `COUNSELLOR${String(counsellorCount + 1).padStart(4, '0')}`;
+
+    // Create counsellor account
+    const counsellor = await User.create({
+      name,
+      email,
+      passwordHash: password,
+      collegeId: counsellorId,
+      role: 'counsellor',
+      department,
+      specialization,
+      experience: experience || 0,
+      availability: availability || [],
+      createdBy: req.user.id,
+      isActive: true
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Counsellor account created successfully',
+      data: {
+        id: counsellor._id,
+        name: counsellor.name,
+        email: counsellor.email,
+        counsellorId: counsellorId,
+        department: counsellor.department,
+        specialization: counsellor.specialization,
+        experience: counsellor.experience,
+        availability: counsellor.availability,
+        isActive: counsellor.isActive,
+        createdAt: counsellor.createdAt
+      }
+    });
+
+  } catch (error) {
+    console.error('Create counsellor error:', error);
+    
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'User with this email already exists'
+      });
+    }
+    
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: messages
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error creating counsellor account'
+    });
+  }
+};
+
+// @desc    Get all counsellors for admin management
+// @route   GET /api/v1/admin/counsellors
+// @access  Private (admin only)
+const getCounsellors = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 20, status, department, search } = req.query;
+
+    // Build query
+    let query = { role: 'counsellor' };
+
+    if (status === 'active') {
+      query.isActive = true;
+    } else if (status === 'inactive') {
+      query.isActive = false;
+    }
+
+    if (department) {
+      query.department = { $regex: department, $options: 'i' };
+    }
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { specialization: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const counsellors = await User.find(query)
+      .select('name email department specialization experience availability isActive createdAt updatedAt rating')
+      .populate('createdBy', 'name email')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    const total = await User.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: counsellors.map(counsellor => ({
+        id: counsellor._id,
+        name: counsellor.name,
+        email: counsellor.email,
+        department: counsellor.department,
+        specialization: counsellor.specialization,
+        experience: counsellor.experience,
+        availability: counsellor.availability,
+        isActive: counsellor.isActive,
+        rating: counsellor.rating,
+        createdBy: counsellor.createdBy?.name || 'Unknown',
+        createdAt: counsellor.createdAt,
+        updatedAt: counsellor.updatedAt
+      })),
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / limit),
+        totalCounsellors: total,
+        limit: parseInt(limit)
+      }
+    });
+
+  } catch (error) {
+    console.error('Get counsellors error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error retrieving counsellors'
+    });
+  }
+};
+
+// @desc    Get single counsellor details
+// @route   GET /api/v1/admin/counsellors/:id
+// @access  Private (admin only)
+const getCounsellor = async (req, res, next) => {
+  try {
+    const counsellor = await User.findOne({
+      _id: req.params.id,
+      role: 'counsellor'
+    })
+    .select('-passwordHash')
+    .populate('createdBy', 'name email');
+
+    if (!counsellor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Counsellor not found'
+      });
+    }
+
+    // Get appointment statistics for this counsellor
+    const appointmentStats = await Appointment.aggregate([
+      {
+        $match: { counsellorId: counsellor._id }
+      },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        ...counsellor.toObject(),
+        appointmentStats: appointmentStats.reduce((acc, stat) => {
+          acc[stat._id] = stat.count;
+          return acc;
+        }, {})
+      }
+    });
+
+  } catch (error) {
+    console.error('Get counsellor error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error retrieving counsellor details'
+    });
+  }
+};
+
+// @desc    Update counsellor details and availability
+// @route   PUT /api/v1/admin/counsellors/:id
+// @access  Private (admin only)
+const updateCounsellor = async (req, res, next) => {
+  try {
+    const {
+      name,
+      department,
+      specialization,
+      experience,
+      availability,
+      isActive
+    } = req.body;
+
+    const counsellor = await User.findOne({
+      _id: req.params.id,
+      role: 'counsellor'
+    });
+
+    if (!counsellor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Counsellor not found'
+      });
+    }
+
+    // Update fields
+    const updateFields = {};
+    if (name !== undefined) updateFields.name = name;
+    if (department !== undefined) updateFields.department = department;
+    if (specialization !== undefined) updateFields.specialization = specialization;
+    if (experience !== undefined) updateFields.experience = experience;
+    if (availability !== undefined) updateFields.availability = availability;
+    if (isActive !== undefined) updateFields.isActive = isActive;
+
+    const updatedCounsellor = await User.findByIdAndUpdate(
+      req.params.id,
+      updateFields,
+      { new: true, runValidators: true }
+    ).select('-passwordHash');
+
+    res.status(200).json({
+      success: true,
+      message: 'Counsellor updated successfully',
+      data: updatedCounsellor
+    });
+
+  } catch (error) {
+    console.error('Update counsellor error:', error);
+    
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: messages
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating counsellor'
+    });
+  }
+};
+
+// @desc    Activate/Deactivate counsellor
+// @route   PATCH /api/v1/admin/counsellors/:id/status
+// @access  Private (admin only)
+const toggleCounsellorStatus = async (req, res, next) => {
+  try {
+    const { isActive } = req.body;
+
+    const counsellor = await User.findOneAndUpdate(
+      { _id: req.params.id, role: 'counsellor' },
+      { isActive },
+      { new: true }
+    ).select('name email isActive');
+
+    if (!counsellor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Counsellor not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Counsellor ${isActive ? 'activated' : 'deactivated'} successfully`,
+      data: counsellor
+    });
+
+  } catch (error) {
+    console.error('Toggle counsellor status error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating counsellor status'
+    });
+  }
+};
+
+// @desc    Delete counsellor (soft delete)
+// @route   DELETE /api/v1/admin/counsellors/:id
+// @access  Private (admin only)
+const deleteCounsellor = async (req, res, next) => {
+  try {
+    const counsellor = await User.findOne({
+      _id: req.params.id,
+      role: 'counsellor'
+    });
+
+    if (!counsellor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Counsellor not found'
+      });
+    }
+
+    // Check if counsellor has any active appointments
+    const activeAppointments = await Appointment.countDocuments({
+      counsellorId: req.params.id,
+      status: { $in: ['scheduled', 'pending'] }
+    });
+
+    if (activeAppointments > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete counsellor with active appointments. Please reschedule or cancel appointments first.'
+      });
+    }
+
+    // Soft delete by deactivating
+    await User.findByIdAndUpdate(req.params.id, { 
+      isActive: false,
+      updatedAt: new Date()
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Counsellor account deactivated successfully'
+    });
+
+  } catch (error) {
+    console.error('Delete counsellor error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error deleting counsellor'
+    });
+  }
+};
+
+// @desc    Reset counsellor password
+// @route   POST /api/v1/admin/counsellors/:id/reset-password
+// @access  Private (admin only)
+const resetCounsellorPassword = async (req, res, next) => {
+  try {
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters long'
+      });
+    }
+
+    const counsellor = await User.findOne({
+      _id: req.params.id,
+      role: 'counsellor'
+    });
+
+    if (!counsellor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Counsellor not found'
+      });
+    }
+
+    // Update password
+    counsellor.passwordHash = newPassword; // Will be hashed by pre-save hook
+    await counsellor.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Counsellor password reset successfully'
+    });
+
+  } catch (error) {
+    console.error('Reset counsellor password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error resetting counsellor password'
+    });
+  }
+};
+
 module.exports = {
   getAdminOverview,
   getUserAnalytics,
-  getCrisisDashboard
+  getCrisisDashboard,
+  createCounsellor,
+  getCounsellors,
+  getCounsellor,
+  updateCounsellor,
+  toggleCounsellorStatus,
+  deleteCounsellor,
+  resetCounsellorPassword
 };

@@ -26,12 +26,37 @@ const Footer = () => {
           </div>
           
           <div className="footer-section">
-            <h3>{t('footer.emergency.title', 'Emergency Contacts')}</h3>
-            <div className="emergency-contacts">
-              <p><strong>{t('footer.emergency.national', 'National Suicide Prevention')}</strong></p>
-              <p>📞 988</p>
-              <p><strong>{t('footer.emergency.crisis', 'Crisis Text Line')}</strong></p>
-              <p>📱 Text HOME to 741741</p>
+            <h3 className="text-red-600 font-semibold">{t('footer.emergency.title', '🚨 Crisis Emergency')}</h3>
+            <div className="emergency-contacts bg-red-50 p-4 rounded-lg border border-red-200">
+              <p className="text-red-800 font-bold mb-2">IMMEDIATE HELP AVAILABLE</p>
+              
+              <div className="space-y-2 text-sm">
+                <div>
+                  <p className="font-semibold text-red-700">National Suicide Prevention Lifeline</p>
+                  <p className="text-red-600">📞 <a href="tel:988" className="hover:underline font-bold">988</a></p>
+                </div>
+                
+                <div>
+                  <p className="font-semibold text-red-700">Crisis Text Line</p>
+                  <p className="text-red-600">📱 Text <strong>HOME</strong> to <a href="sms:741741" className="hover:underline font-bold">741741</a></p>
+                </div>
+                
+                <div>
+                  <p className="font-semibold text-red-700">Emergency Services</p>
+                  <p className="text-red-600">📞 <a href="tel:911" className="hover:underline font-bold">911</a></p>
+                </div>
+                
+                <div className="pt-2 border-t border-red-300">
+                  <p className="font-semibold text-red-700">Crisis Email Support</p>
+                  <p className="text-red-600">✉️ <a href="mailto:crisis@mann-mitra.edu" className="hover:underline">crisis@mann-mitra.edu</a></p>
+                </div>
+              </div>
+              
+              <div className="mt-3 p-2 bg-yellow-100 border border-yellow-300 rounded">
+                <p className="text-xs text-yellow-800 font-medium">
+                  If you're having thoughts of self-harm, please reach out immediately. You're not alone.
+                </p>
+              </div>
             </div>
           </div>
           
