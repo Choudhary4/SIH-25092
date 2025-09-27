@@ -86,7 +86,7 @@ const AdminDashboardNew = () => {
                 <img 
                   src={logoImage} 
                   alt="Mann-Mitra Logo" 
-                  className="h-16 w-auto"
+                  className="h-32 w-auto"
                 />
               </button>
               <div>

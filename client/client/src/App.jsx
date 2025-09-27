@@ -21,6 +21,10 @@ import CounsellorDashboard from './pages/CounsellorDashboard'
 import NotFound from './pages/NotFound'
 import About from './pages/About'
 import Resources from './pages/Resources'
+import CertificationCourse from './pages/CertificationCourse'
+import CertificationExam from './pages/CertificationExam'
+import ScheduleInterview from './pages/ScheduleInterview'
+import ScheduleExam from './pages/ScheduleExam'
 import Footer from './components/Footer'
 import StudentDashboard from './components/dashboards/StudentDashboard'
 
@@ -57,6 +61,10 @@ function App() {
                 <Route path="/admin" element={<Admin />} />
                 <Route path='/about' element={<About />} />
                 <Route path='/resources' element = {<Resources/>} />
+                <Route path='/certification/course/:courseId' element = {<CertificationCourse/>} />
+                <Route path='/certification/exam' element = {<CertificationExam/>} />
+                <Route path='/certification/schedule-exam' element = {<ScheduleExam/>} />
+                <Route path='/certification/schedule-interview' element = {<ScheduleInterview/>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>

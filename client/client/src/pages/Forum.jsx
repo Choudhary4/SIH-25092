@@ -41,13 +41,40 @@ const Forum = () => {
     'social_anxiety'
   ]);
 
-  // Mock data for trained peer volunteers
-  const [trainedPeers] = useState([
-    { id: 1, name: 'Anonymous Peer 1', specialization: 'Anxiety Support', verified: true, responses: 45 },
-    { id: 2, name: 'Anonymous Peer 2', specialization: 'Academic Stress', verified: true, responses: 32 },
-    { id: 3, name: 'Anonymous Peer 3', specialization: 'Depression Support', verified: true, responses: 28 },
-    { id: 4, name: 'Anonymous Peer 4', specialization: 'Social Issues', verified: true, responses: 51 }
-  ]);
+  // Trained peer volunteers from certification system
+  const [trainedPeers, setTrainedPeers] = useState([]);
+
+  // Load certified students when component mounts
+  useEffect(() => {
+    const certified = JSON.parse(localStorage.getItem('trainedStudents') || '[]');
+    // Add some demo certified peers if none exist
+    if (certified.length === 0) {
+      const demoPeers = [
+        { id: 1, studentName: 'Anonymous Peer #9012', specialization: 'Anxiety Support', status: 'certified', responses: 45 },
+        { id: 2, studentName: 'Anonymous Peer #3456', specialization: 'Academic Stress', status: 'certified', responses: 32 },
+        { id: 3, studentName: 'Anonymous Peer #7890', specialization: 'Depression Support', status: 'certified', responses: 28 },
+      ];
+      setTrainedPeers(demoPeers);
+    } else {
+      setTrainedPeers(certified.map(peer => ({
+        ...peer,
+        responses: Math.floor(Math.random() * 50) + 10 // Random response count for demo
+      })));
+    }
+  }, []);
+
+  // Check if current user is a certified peer
+  const isUserCertifiedPeer = () => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const trainedStudents = JSON.parse(localStorage.getItem('trainedStudents') || '[]');
+    return trainedStudents.some(peer => peer.studentId === user.id);
+  };
+
+  // Get peer info for display
+  const getPeerInfo = (userId) => {
+    const trainedStudents = JSON.parse(localStorage.getItem('trainedStudents') || '[]');
+    return trainedStudents.find(peer => peer.studentId === userId);
+  };
 
   // Load threads on component mount and page change
   useEffect(() => {
@@ -538,35 +565,93 @@ const Forum = () => {
                           No responses yet. Be the first trained peer volunteer to help!
                         </p>
                       ) : (
-                        threadReplies.map((reply, index) => (
-                          <div key={reply.id || index} className="bg-green-50 rounded-lg p-4 border-l-4 border-green-400">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                                <span className="text-white text-xs font-medium">P</span>
+                        threadReplies.map((reply, index) => {
+                          const peerInfo = getPeerInfo(reply.userId);
+                          const isCertifiedPeer = !!peerInfo;
+                          
+                          return (
+                            <div key={reply.id || index} className={`rounded-lg p-4 border-l-4 ${
+                              isCertifiedPeer 
+                                ? 'bg-green-50 border-green-400' 
+                                : 'bg-gray-50 border-gray-300'
+                            }`}>
+                              <div className="flex items-center space-x-2 mb-2">
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                                  isCertifiedPeer 
+                                    ? 'bg-green-500' 
+                                    : 'bg-gray-400'
+                                }`}>
+                                  <span className="text-white text-xs font-medium">
+                                    {isCertifiedPeer ? '🎓' : 'A'}
+                                  </span>
+                                </div>
+                                <div className="flex-1 flex items-center justify-between">
+                                  <div>
+                                    <div className="flex items-center space-x-2">
+                                      <p className={`text-sm font-medium ${
+                                        isCertifiedPeer ? 'text-green-900' : 'text-gray-700'
+                                      }`}>
+                                        {isCertifiedPeer 
+                                          ? `Certified Peer Supporter${peerInfo.specialization ? ` • ${peerInfo.specialization}` : ''}`
+                                          : 'Anonymous Student'
+                                        }
+                                      </p>
+                                      {isCertifiedPeer && (
+                                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full font-medium">
+                                          ✅ Verified
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className={`text-xs ${
+                                      isCertifiedPeer ? 'text-green-600' : 'text-gray-500'
+                                    }`}>
+                                      {formatDate(reply.createdAt)}
+                                    </p>
+                                  </div>
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-sm font-medium text-green-900">Trained Peer Volunteer</p>
-                                <p className="text-xs text-green-600">{formatDate(reply.createdAt)}</p>
-                              </div>
+                              <p className="text-gray-700 text-sm">{reply.body}</p>
+                              {isCertifiedPeer && (
+                                <div className="mt-2 text-xs text-green-600 italic">
+                                  💡 Response from a trained peer supporter with {peerInfo.examScore}% certification score
+                                </div>
+                              )}
                             </div>
-                            <p className="text-gray-700 text-sm">{reply.body}</p>
-                          </div>
-                        ))
+                          )
+                        })
                       )}
                     </div>
                   </div>
 
                   {/* Reply Form */}
                   <form onSubmit={handleReplySubmit} className="space-y-4">
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex items-center">
-                        <span className="text-green-600 mr-2">🎓</span>
-                        <div>
-                          <p className="text-sm font-medium text-green-900">Peer Support Response</p>
-                          <p className="text-xs text-green-700">Respond as a trained peer volunteer to provide supportive guidance.</p>
+                    {isUserCertifiedPeer() ? (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div className="flex items-center">
+                          <span className="text-green-600 mr-2">🎓</span>
+                          <div>
+                            <p className="text-sm font-medium text-green-900">Certified Peer Support Response</p>
+                            <p className="text-xs text-green-700">You're responding as a verified trained peer supporter.</p>
+                          </div>
+                          <span className="ml-auto px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full font-medium">
+                            ✅ Verified
+                          </span>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="flex items-center">
+                          <span className="text-blue-600 mr-2">💬</span>
+                          <div>
+                            <p className="text-sm font-medium text-blue-900">Peer Response</p>
+                            <p className="text-xs text-blue-700">Share your supportive thoughts as a community member.</p>
+                            <p className="text-xs text-blue-600 mt-1">
+                              Want to become a certified peer supporter? <a href="/resources" className="underline">Take our training course!</a>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     <div>
                       <label htmlFor="replyContent" className="block text-sm font-medium text-gray-700 mb-1">
@@ -577,8 +662,15 @@ const Forum = () => {
                         rows={4}
                         value={replyContent}
                         onChange={(e) => setReplyContent(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 resize-none"
-                        placeholder="Provide supportive, helpful guidance as a trained peer volunteer..."
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm resize-none ${
+                          isUserCertifiedPeer() 
+                            ? 'focus:ring-green-500 focus:border-green-500' 
+                            : 'focus:ring-blue-500 focus:border-blue-500'
+                        }`}
+                        placeholder={isUserCertifiedPeer() 
+                          ? "Provide supportive, professional guidance as a certified peer supporter..."
+                          : "Share your thoughts and support as a community member..."
+                        }
                         required
                       />
                     </div>
