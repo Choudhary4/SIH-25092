@@ -19,7 +19,7 @@ export const useApi = () => {
       };
 
       // Add authorization header if token exists
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const token = localStorage.getItem('Mann-Mitra_token') || sessionStorage.getItem('Mann-Mitra_token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -33,10 +33,9 @@ export const useApi = () => {
       // Handle different ways to get the API URL
       let baseUrl;
       try {
-        baseUrl = import.meta?.env?.VITE_API_URL || 
-                 (typeof window !== 'undefined' && window.location.origin.includes('localhost') ? 
-                  'http://localhost:5000' : 
-                  'http://localhost:5000');
+        let envUrl = import.meta?.env?.VITE_API_URL || 'http://localhost:5000';
+        // Remove /api suffix if it exists to prevent double /api in URL
+        baseUrl = envUrl.endsWith('/api') ? envUrl.slice(0, -4) : envUrl;
       } catch (e) {
         baseUrl = 'http://localhost:5000';
       }

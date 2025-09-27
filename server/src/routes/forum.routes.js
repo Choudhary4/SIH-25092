@@ -70,8 +70,14 @@ router.post(
       .trim()
       .isLength({ min: 5, max: 200 })
       .withMessage('Title must be between 5 and 200 characters')
-      .matches(/^[a-zA-Z0-9\s\-_.,!?()[\]{}'"।॥]+$/)
-      .withMessage('Title contains invalid characters'),
+      .custom((value) => {
+        // Check for dangerous characters that could be used for XSS
+        const dangerousChars = /<script|<\/script|javascript:|on\w+\s*=/i;
+        if (dangerousChars.test(value)) {
+          throw new Error('Title contains potentially dangerous content');
+        }
+        return true;
+      }),
     body('body')
       .trim()
       .isLength({ min: 10, max: 5000 })

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../utils/api';
 
 const Forum = () => {
@@ -81,12 +80,18 @@ const Forum = () => {
     fetchThreads();
   }, [currentPage]);
 
+  // Debug modal state changes
+  useEffect(() => {
+    console.log('New Post Modal state changed:', showNewPostModal);
+  }, [showNewPostModal]);
+
   const fetchThreads = async () => {
     setLoading(true);
     setError(null);
 
     try {
       console.log('Fetching threads from API...');
+      console.log('API URL:', `${api.defaults.baseURL}/v1/forum/threads?page=${currentPage}&limit=10`);
       const response = await api.get(`/v1/forum/threads?page=${currentPage}&limit=10`);
       console.log('API Response:', response.data);
       setThreads(response.data?.posts || []);
@@ -94,7 +99,12 @@ const Forum = () => {
       setTotalThreads(response.data?.total || 0);
     } catch (err) {
       console.error('Error fetching threads:', err);
-      setError(err.message || 'Failed to load threads. Please check if the server is running.');
+      console.error('Error details:', {
+        message: err.message,
+        status: err.status,
+        type: err.type
+      });
+      setError(err.message || 'Failed to load threads. Please check if the server is running at http://localhost:5000');
     } finally {
       setLoading(false);
     }
@@ -124,8 +134,30 @@ const Forum = () => {
 
   const handleNewPost = async (e) => {
     e.preventDefault();
+    
+    // Validation checks
+    const titleLength = newPost.title.trim().length;
+    const contentLength = newPost.content.trim().length;
+    
     if (!newPost.title.trim() || !newPost.content.trim()) {
-      setError('Please fill in all fields');
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    if (titleLength < 5 || titleLength > 200) {
+      setError('Title must be between 5 and 200 characters');
+      return;
+    }
+
+    if (contentLength < 10 || contentLength > 5000) {
+      setError('Message must be between 10 and 5000 characters');
+      return;
+    }
+
+    // Check for potentially dangerous content
+    const dangerousPattern = /<script|<\/script|javascript:|on\w+\s*=/i;
+    if (dangerousPattern.test(newPost.title) || dangerousPattern.test(newPost.content)) {
+      setError('Posts cannot contain script tags or JavaScript code for security reasons');
       return;
     }
 
@@ -160,23 +192,35 @@ const Forum = () => {
       if (response.data.success) {
         setShowNewPostModal(false);
         setNewPost({ title: '', content: '', category: '', isAnonymous: true });
-        fetchThreads(); // Refresh threads
         
-        // Show warning if content was flagged
+        // Show success message or warning
         if (response.data.warning) {
           setError(response.data.warning);
+        } else if (response.data.crisisResources) {
+          setError(`${response.data.crisisResources.message} Crisis hotline: ${response.data.crisisResources.crisis_hotline}`);
+        } else {
+          // Show success message temporarily
+          setError(null);
+          // You might want to add a success state here instead of using error
+          console.log('✅ Post created successfully:', response.data.message);
         }
         
-        // Show crisis resources if detected
-        if (response.data.crisisResources) {
-          setError(`${response.data.crisisResources.message} Crisis hotline: ${response.data.crisisResources.crisis_hotline}`);
-        }
+        fetchThreads(); // Refresh threads to show new post
       } else {
         setError(response.data.message || 'Failed to create post. Please try again.');
       }
     } catch (err) {
       console.error('Error creating post:', err);
-      setError('Failed to create post. Please try again.');
+      
+      // Handle validation errors from backend
+      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        const errorMessages = err.response.data.errors.map(error => error.msg).join(', ');
+        setError(`Validation Error: ${errorMessages}`);
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError('Failed to create post. Please try again.');
+      }
     } finally {
       setSubmittingPost(false);
     }
@@ -209,16 +253,16 @@ const Forum = () => {
 
   const getCategoryColor = (category) => {
     const colors = {
-      general: 'bg-gray-100 text-gray-800',
-      academic_stress: 'bg-purple-100 text-purple-800',
-      anxiety_depression: 'bg-blue-100 text-blue-800',
-      relationships: 'bg-pink-100 text-pink-800',
-      family_issues: 'bg-green-100 text-green-800',
-      peer_pressure: 'bg-orange-100 text-orange-800',
-      self_esteem: 'bg-teal-100 text-teal-800',
-      study_motivation: 'bg-indigo-100 text-indigo-800',
-      career_confusion: 'bg-yellow-100 text-yellow-800',
-      social_anxiety: 'bg-red-100 text-red-800'
+      general: 'bg-gradient-to-r from-gray-500 to-gray-600 text-white',
+      academic_stress: 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white',
+      anxiety_depression: 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white', 
+      relationships: 'bg-gradient-to-r from-pink-500 to-rose-600 text-white',
+      family_issues: 'bg-gradient-to-r from-green-500 to-emerald-600 text-white',
+      peer_pressure: 'bg-gradient-to-r from-orange-500 to-amber-600 text-white',
+      self_esteem: 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white',
+      study_motivation: 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white',
+      career_confusion: 'bg-gradient-to-r from-yellow-500 to-orange-600 text-white',
+      social_anxiety: 'bg-gradient-to-r from-red-500 to-pink-600 text-white'
     };
     return colors[category] || colors.general;
   };
@@ -229,24 +273,36 @@ const Forum = () => {
   };
 
   const handleThreadClick = async (thread) => {
+    console.log('Thread clicked:', thread);
     setSelectedThread(thread);
     setShowThreadModal(true);
     
     try {
-      const response = await api.get(`/v1/forum/posts/${thread.id || thread._id}`);
+      const threadId = thread._id || thread.id;
+      console.log('Fetching thread details for ID:', threadId);
+      const response = await api.get(`/v1/forum/posts/${threadId}`);
+      console.log('Thread details response:', response.data);
       if (response.data.success) {
         setThreadReplies(response.data.replies || []);
       }
     } catch (err) {
       console.error('Error fetching thread details:', err);
-      setError('Failed to load thread details');
+      setError('Failed to load thread details: ' + (err.message || 'Unknown error'));
     }
   };
 
   const handleReplySubmit = async (e) => {
     e.preventDefault();
+    
+    const replyLength = replyContent.trim().length;
+    
     if (!replyContent.trim()) {
       setError('Please write a reply message');
+      return;
+    }
+
+    if (replyLength < 10 || replyLength > 5000) {
+      setError('Reply must be between 10 and 5000 characters');
       return;
     }
 
@@ -266,13 +322,15 @@ const Forum = () => {
     setError(null);
 
     try {
+      const parentId = selectedThread._id || selectedThread.id;
       const replyData = {
         title: `Re: ${selectedThread.title}`,
         body: replyContent.trim(),
-        parentPost: selectedThread.id || selectedThread._id,
+        parentPost: parentId,
         isAnonymous: true // Replies are always anonymous
       };
 
+      console.log('Submitting reply:', replyData);
       const response = await api.post('/v1/forum/posts', replyData);
       
       if (response.data.success) {
@@ -296,66 +354,114 @@ const Forum = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-4">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+          </div>
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
             Peer Talk
           </h1>
-          <p className="text-lg text-gray-600 mb-2">
+          <p className="text-xl text-gray-600 mb-3 max-w-2xl mx-auto leading-relaxed">
             Anonymous peer-to-peer discussion board where trained students provide guidance and support
           </p>
-          <p className="text-sm text-gray-500">
-            🔒 All posts are anonymous • 🛡️ Content is moderated • 👥 Trained peer volunteers respond
-          </p>
+          <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-500">
+            <div className="flex items-center">
+              <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+              All posts are anonymous
+            </div>
+            <div className="flex items-center">
+              <span className="w-2 h-2 bg-blue-400 rounded-full mr-2"></span>
+              Content is moderated
+            </div>
+            <div className="flex items-center">
+              <span className="w-2 h-2 bg-purple-400 rounded-full mr-2"></span>
+              Trained peer volunteers respond
+            </div>
+          </div>
         </div>
 
         {/* Trained Peers Section */}
-        <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 mb-8 border border-green-200">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-            <span className="mr-2">👨‍🎓</span>
-            Our Trained Peer Volunteers
-          </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50 rounded-2xl p-8 mb-10 border border-emerald-200 shadow-lg">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-emerald-500 to-blue-600 rounded-xl mb-3">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Our Trained Peer Volunteers</h2>
+            <p className="text-gray-600">Certified peer supporters ready to help you through difficult times</p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {trainedPeers.map(peer => (
-              <div key={peer.id} className="bg-white rounded-lg p-4 border border-green-200">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-gray-900">{peer.name}</span>
-                  {peer.verified && <span className="text-green-600">✓</span>}
+              <div key={peer.id} className="bg-white rounded-xl p-6 border border-white shadow-sm hover:shadow-md transition-all duration-300 hover:transform hover:scale-105">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-white font-semibold text-lg">🎓</span>
+                  </div>
+                  <div className="flex items-center justify-center mb-2">
+                    <span className="font-semibold text-gray-900 text-sm">{peer.name}</span>
+                    {peer.verified && (
+                      <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                        ✓ Verified
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">{peer.specialization}</p>
+                  <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {peer.responses} helpful responses
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600 mb-2">{peer.specialization}</p>
-                <p className="text-xs text-gray-500">{peer.responses} helpful responses</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* Stats and New Post Button */}
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-4 sm:space-y-0">
-          <div className="flex items-center space-x-6 text-sm text-gray-600">
-            <span>{totalThreads} threads</span>
-            <span>Page {currentPage} of {totalPages}</span>
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-8 space-y-4 sm:space-y-0">
+          <div className="flex items-center space-x-8">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </div>
+              <div>
+                <div className="text-lg font-semibold text-gray-900">{totalThreads}</div>
+                <div className="text-xs text-gray-500">Active Discussions</div>
+              </div>
+            </div>
+            <div className="hidden sm:block text-gray-300">|</div>
+            <div className="text-sm text-gray-600 bg-gray-50 px-3 py-1 rounded-lg">
+              Page {currentPage} of {totalPages}
+            </div>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowNewPostModal(true)}
-            className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-lg flex items-center space-x-2"
+          
+          <button
+            onClick={() => {
+              console.log('New Post button clicked');
+              setShowNewPostModal(true);
+            }}
+            className="group bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center space-x-3"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            <span>New Post</span>
-          </motion.button>
+            <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-colors">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+              </svg>
+            </div>
+            <span>Start Discussion</span>
+          </button>
         </div>
 
         {/* Error Display */}
         {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6"
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6"
           >
             <div className="flex">
               <svg className="w-5 h-5 text-red-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -365,135 +471,159 @@ const Forum = () => {
                 <p className="text-sm text-red-700">{error}</p>
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* Loading State */}
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-            <span className="ml-3 text-gray-600">Loading threads...</span>
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="relative">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200"></div>
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-600 border-t-transparent absolute top-0"></div>
+            </div>
+            <div className="mt-6 text-center">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading discussions...</h3>
+              <p className="text-gray-600">Finding the latest peer support conversations</p>
+            </div>
           </div>
         ) : (
           <>
             {/* Threads List */}
-            <div className="space-y-4 mb-8">
+            <div className="space-y-6 mb-8">
               {threads.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-                  <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Discussions Yet</h3>
-                  <p className="text-gray-600 mb-4">Be the first to start a conversation in our community</p>
+                <div className="text-center py-16 bg-gradient-to-br from-gray-50 to-blue-50 rounded-2xl border-2 border-dashed border-gray-200">
+                  <div className="w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">No Discussions Yet</h3>
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto">Be the first to start a meaningful conversation in our supportive community</p>
                   <button
                     onClick={() => setShowNewPostModal(true)}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
                   >
                     Create First Post
                   </button>
                 </div>
               ) : (
                 threads.map((thread) => (
-                  <motion.div
+                  <div
                     key={thread.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6"
+                    className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 hover:border-indigo-200 group"
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 
-                            className="text-lg font-semibold text-gray-900 hover:text-indigo-600 cursor-pointer"
+                    <div className="p-8">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-4">
+                            <h3 
+                              className="text-xl font-bold text-gray-900 hover:text-indigo-600 cursor-pointer transition-colors group-hover:text-indigo-600"
+                              onClick={() => handleThreadClick(thread)}
+                            >
+                              {thread.title}
+                            </h3>
+                            {thread.tags && thread.tags.length > 0 && (
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(thread.tags[0])} shadow-sm`}>
+                                {thread.tags[0].replace('_', ' ')}
+                              </span>
+                            )}
+                          </div>
+                          
+                          <p 
+                            className="text-gray-600 text-base mb-6 line-clamp-3 cursor-pointer leading-relaxed"
                             onClick={() => handleThreadClick(thread)}
                           >
-                            {thread.title}
-                          </h3>
-                          {thread.tags && thread.tags.length > 0 && (
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(thread.tags[0])}`}>
-                              {thread.tags[0]}
-                            </span>
-                          )}
-                        </div>
-                        
-                        <p 
-                          className="text-gray-600 text-sm mb-3 line-clamp-2 cursor-pointer"
-                          onClick={() => handleThreadClick(thread)}
-                        >
-                          {thread.body}
-                        </p>
-                        
-                        <div className="flex items-center space-x-4 text-xs text-gray-500">
-                          <div className="flex items-center space-x-1">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            <span>Anonymous</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span>{formatDate(thread.createdAt)}</span>
-                          </div>
-                          {thread.replyCount > 0 && (
-                            <div className="flex items-center space-x-1">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                              </svg>
-                              <span>{thread.replyCount} replies</span>
+                            {thread.body}
+                          </p>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-6 text-sm text-gray-500">
+                              <div className="flex items-center space-x-2">
+                                <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
+                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                  </svg>
+                                </div>
+                                <span className="font-medium">Anonymous Student</span>
+                              </div>
+                              
+                              <div className="flex items-center space-x-1 text-gray-400">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>{formatDate(thread.createdAt)}</span>
+                              </div>
                             </div>
-                          )}
+                            
+                            {thread.replyCount > 0 && (
+                              <div className="flex items-center space-x-2 bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                </svg>
+                                <span className="font-medium">{thread.replyCount} {thread.replyCount === 1 ? 'reply' : 'replies'}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
+                        
+                        {thread.isPinned && (
+                          <div className="ml-6">
+                            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl">
+                              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      
-                      {thread.isPinned && (
-                        <div className="ml-4">
-                          <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                      )}
                     </div>
-                  </motion.div>
+                  </div>
                 ))
               )}
             </div>
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-center space-x-2">
+              <div className="flex items-center justify-center space-x-3 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  Previous
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  <span>Previous</span>
                 </button>
                 
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const page = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
-                  return (
-                    <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`px-3 py-2 text-sm font-medium rounded-md ${
-                        currentPage === page
-                          ? 'text-white bg-indigo-600 border border-indigo-600'
-                          : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  );
-                })}
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const page = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`w-10 h-10 text-sm font-semibold rounded-xl transition-all ${
+                          currentPage === page
+                            ? 'text-white bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg transform scale-105'
+                            : 'text-gray-600 bg-gray-50 hover:bg-gray-100'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                </div>
                 
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-xl hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  Next
+                  <span>Next</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </button>
               </div>
             )}
@@ -502,26 +632,18 @@ const Forum = () => {
       </div>
 
       {/* Thread Detail Modal */}
-      <AnimatePresence>
-        {showThreadModal && selectedThread && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-                onClick={() => setShowThreadModal(false)}
-              />
-
-              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6"
-              >
+      {showThreadModal && selectedThread && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+            onClick={() => setShowThreadModal(false)}
+          />
+          
+          {/* Modal Content */}
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20">
+            <div className="relative bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6"
+            >
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium text-gray-900">{selectedThread.title}</h3>
@@ -655,24 +777,42 @@ const Forum = () => {
 
                     <div>
                       <label htmlFor="replyContent" className="block text-sm font-medium text-gray-700 mb-1">
-                        Your Supportive Response
+                        Your Supportive Response <span className="text-red-500">*</span>
+                        <span className="text-xs text-gray-500 ml-2">(10-5000 characters)</span>
                       </label>
                       <textarea
                         id="replyContent"
                         rows={4}
                         value={replyContent}
                         onChange={(e) => setReplyContent(e.target.value)}
-                        className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm resize-none ${
+                        className={`w-full px-3 py-2 border rounded-md shadow-sm resize-none ${
+                          replyContent.length > 0 && (replyContent.length < 10 || replyContent.length > 5000)
+                            ? 'border-red-300 bg-red-50'
+                            : 'border-gray-300'
+                        } ${
                           isUserCertifiedPeer() 
                             ? 'focus:ring-green-500 focus:border-green-500' 
                             : 'focus:ring-blue-500 focus:border-blue-500'
                         }`}
                         placeholder={isUserCertifiedPeer() 
-                          ? "Provide supportive, professional guidance as a certified peer supporter..."
-                          : "Share your thoughts and support as a community member..."
+                          ? "Provide supportive, professional guidance as a certified peer supporter... (at least 10 characters)"
+                          : "Share your thoughts and support as a community member... (at least 10 characters)"
                         }
+                        minLength={10}
+                        maxLength={5000}
                         required
                       />
+                      <div className="flex justify-between text-xs mt-1">
+                        <span className={`${
+                          replyContent.length < 10 ? 'text-red-500' : 
+                          replyContent.length >= 10 && replyContent.length <= 5000 ? 'text-green-500' : 'text-red-500'
+                        }`}>
+                          {replyContent.length}/5000 characters
+                        </span>
+                        {replyContent.length > 0 && replyContent.length < 10 && (
+                          <span className="text-red-500">Reply too short (minimum 10 characters)</span>
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex space-x-3">
@@ -685,7 +825,7 @@ const Forum = () => {
                       </button>
                       <button
                         type="submit"
-                        disabled={submittingReply}
+                        disabled={submittingReply || replyContent.trim().length < 10}
                         className="flex-1 bg-green-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {submittingReply ? (
@@ -700,33 +840,27 @@ const Forum = () => {
                     </div>
                   </form>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </div>
         )}
-      </AnimatePresence>
 
       {/* New Post Modal */}
-      <AnimatePresence>
-        {showNewPostModal && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-                onClick={() => setShowNewPostModal(false)}
-              />
-
-              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6"
-              >
+      {showNewPostModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+            onClick={() => {
+              console.log('Modal backdrop clicked');
+              setShowNewPostModal(false);
+            }}
+          />
+          
+          {/* Modal Content */}
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20">
+            <div className="relative bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6"
+            >
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium text-gray-900">Create New Post</h3>
@@ -752,13 +886,18 @@ const Forum = () => {
                       </div>
                     </div>
 
-                    {/* Content Filter Warning */}
+                    {/* Content Guidelines */}
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                       <div className="flex items-center">
-                        <span className="text-yellow-600 mr-2">🛡️</span>
+                        <span className="text-yellow-600 mr-2">�</span>
                         <div>
-                          <p className="text-sm font-medium text-yellow-900">Content Guidelines</p>
-                          <p className="text-xs text-yellow-700">Posts are automatically filtered for harmful content. Triggering content will be redirected to professional support.</p>
+                          <p className="text-sm font-medium text-yellow-900">Posting Guidelines</p>
+                          <p className="text-xs text-yellow-700">
+                            • Title: 5-200 characters • Message: 10-5000 characters<br/>
+                            • Most characters and emojis are allowed (no scripts/code)<br/>
+                            • Posts are automatically filtered for harmful content<br/>
+                            • Triggering content will be redirected to professional support
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -789,32 +928,68 @@ const Forum = () => {
 
                     <div>
                       <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-                        Title
+                        Title <span className="text-red-500">*</span>
+                        <span className="text-xs text-gray-500 ml-2">(5-200 characters)</span>
                       </label>
                       <input
                         type="text"
                         id="title"
                         value={newPost.title}
                         onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Briefly describe your situation..."
+                        className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${
+                          newPost.title.length > 0 && (newPost.title.length < 5 || newPost.title.length > 200)
+                            ? 'border-red-300 bg-red-50'
+                            : 'border-gray-300'
+                        }`}
+                        placeholder="Briefly describe your situation (at least 5 characters)..."
+                        minLength={5}
+                        maxLength={200}
                         required
                       />
+                      <div className="flex justify-between text-xs mt-1">
+                        <span className={`${
+                          newPost.title.length < 5 ? 'text-red-500' : 
+                          newPost.title.length >= 5 && newPost.title.length <= 200 ? 'text-green-500' : 'text-red-500'
+                        }`}>
+                          {newPost.title.length}/200 characters
+                        </span>
+                        {newPost.title.length > 0 && newPost.title.length < 5 && (
+                          <span className="text-red-500">Title too short (minimum 5 characters)</span>
+                        )}
+                      </div>
                     </div>
 
                     <div>
                       <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-                        Your Message
+                        Your Message <span className="text-red-500">*</span>
+                        <span className="text-xs text-gray-500 ml-2">(10-5000 characters)</span>
                       </label>
                       <textarea
                         id="content"
                         rows={6}
                         value={newPost.content}
                         onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 resize-none"
-                        placeholder="Share what you're going through. Our trained peer volunteers are here to help..."
+                        className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 resize-none ${
+                          newPost.content.length > 0 && (newPost.content.length < 10 || newPost.content.length > 5000)
+                            ? 'border-red-300 bg-red-50'
+                            : 'border-gray-300'
+                        }`}
+                        placeholder="Share what you're going through. Our trained peer volunteers are here to help... (at least 10 characters)"
+                        minLength={10}
+                        maxLength={5000}
                         required
                       />
+                      <div className="flex justify-between text-xs mt-1">
+                        <span className={`${
+                          newPost.content.length < 10 ? 'text-red-500' : 
+                          newPost.content.length >= 10 && newPost.content.length <= 5000 ? 'text-green-500' : 'text-red-500'
+                        }`}>
+                          {newPost.content.length}/5000 characters
+                        </span>
+                        {newPost.content.length > 0 && newPost.content.length < 10 && (
+                          <span className="text-red-500">Message too short (minimum 10 characters)</span>
+                        )}
+                      </div>
                     </div>
 
                       <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
@@ -836,7 +1011,7 @@ const Forum = () => {
                       </button>
                       <button
                         type="submit"
-                        disabled={submittingPost}
+                        disabled={submittingPost || newPost.title.trim().length < 5 || newPost.content.trim().length < 10}
                         className="flex-1 bg-indigo-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {submittingPost ? (
@@ -851,11 +1026,10 @@ const Forum = () => {
                     </div>
                   </form>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </div>
         )}
-      </AnimatePresence>
     </div>
   );
 };

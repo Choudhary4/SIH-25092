@@ -4,7 +4,8 @@ const {
   sendChatMessage,
   getChatHistory,
   clearChatSession,
-  getChatAnalytics
+  getChatAnalytics,
+  getAppointmentMessages
 } = require('../controllers/chat.controller');
 const { protect, optionalAuth, authorize } = require('../middlewares/auth.middleware');
 const { createCustomRateLimit } = require('../middlewares/rateLimit');
@@ -113,6 +114,21 @@ router.get(
       .withMessage('Include details must be a boolean')
   ],
   getChatAnalytics
+);
+
+// @route   GET /api/v1/chat/messages/:appointmentId
+// @desc    Get message history for appointment chat
+// @access  Private (participants only)
+router.get(
+  '/messages/:appointmentId',
+  historyRateLimit,
+  protect,
+  [
+    param('appointmentId')
+      .isMongoId()
+      .withMessage('Invalid appointment ID')
+  ],
+  getAppointmentMessages
 );
 
 // @route   GET /api/v1/chat/resources

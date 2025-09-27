@@ -132,6 +132,53 @@ const appointmentSchema = new mongoose.Schema({
     ref: 'Appointment',
     default: null
   },
+  // Chat messages between counsellor and student
+  messages: [{
+    id: {
+      type: String,
+      required: true
+    },
+    senderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    senderName: {
+      type: String,
+      required: true
+    },
+    senderRole: {
+      type: String,
+      enum: ['student', 'counsellor'],
+      required: true
+    },
+    recipientId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    message: {
+      type: String,
+      required: true
+    },
+    messageType: {
+      type: String,
+      enum: ['text', 'image', 'file'],
+      default: 'text'
+    },
+    encrypted: {
+      type: Boolean,
+      default: false
+    },
+    timestamp: {
+      type: Date,
+      default: Date.now
+    },
+    sent: {
+      type: Boolean,
+      default: true
+    }
+  }],
   createdAt: {
     type: Date,
     default: Date.now,

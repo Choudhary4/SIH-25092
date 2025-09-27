@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useApi } from '../../hooks/useApi'
 
 const StudentDashboard = () => {
   const { user } = useAuth()
   const { callApi } = useApi()
+  const navigate = useNavigate()
   const [stats, setStats] = useState({
     screeningsCompleted: 0,
     appointmentsScheduled: 0,
@@ -15,6 +16,7 @@ const StudentDashboard = () => {
   const [appointments, setAppointments] = useState([])
   const [latestAppointment, setLatestAppointment] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [confirmedAppointments, setConfirmedAppointments] = useState([])
 
   useEffect(() => {
     fetchDashboardData()
@@ -35,6 +37,13 @@ const StudentDashboard = () => {
       if (appointmentsResponse.success) {
         const fetchedAppointments = appointmentsResponse.data || []
         setAppointments(fetchedAppointments)
+        
+        // Filter confirmed appointments for chat section
+        const confirmed = fetchedAppointments.filter(apt => 
+          apt.status === 'confirmed' && 
+          (apt.mode === 'tele' || apt.mode === 'video' || apt.mode === 'chat')
+        )
+        setConfirmedAppointments(confirmed)
         
         // If we have API data, use the most recent appointment instead of localStorage
         if (fetchedAppointments.length > 0) {
@@ -96,6 +105,23 @@ const StudentDashboard = () => {
     setLatestAppointment(null)
   }
 
+  const startChatSession = (appointment) => {
+    console.log('startChatSession called with:', appointment)
+    const counsellorId = appointment.counsellorId?._id || appointment.counsellorId
+    console.log('Extracted counsellor ID:', counsellorId)
+    
+    if (!counsellorId || !appointment._id) {
+      console.error('Missing required data:', { counsellorId, appointmentId: appointment._id })
+      alert('Cannot start chat: Missing counsellor or appointment information')
+      return
+    }
+    
+    const chatUrl = `/chat-platform?appointment=${appointment._id}&user=${counsellorId}`
+    console.log('Student starting chat with counsellor:', counsellorId)
+    console.log('Navigating to:', chatUrl)
+    navigate(chatUrl)
+  }
+
   const quickActions = [
     {
       title: 'Take Mental Health Screening',
@@ -124,6 +150,13 @@ const StudentDashboard = () => {
       icon: '📚',
       link: '/resources',
       color: 'bg-orange-50 hover:bg-orange-100 border-orange-200'
+    },
+    {
+      title: 'My Appointments',
+      description: 'View and manage your counselling sessions',
+      icon: '📅',
+      link: '/appointments',
+      color: 'bg-indigo-50 hover:bg-indigo-100 border-indigo-200'
     }
   ]
 
@@ -278,6 +311,19 @@ const StudentDashboard = () => {
               </div>
               
               <div className="flex space-x-3 mt-4 pt-4 border-t border-gray-100">
+                {latestAppointment.status === 'confirmed' && 
+                 (latestAppointment.mode === 'video' || latestAppointment.mode === 'chat') && (
+                  <button
+                    onClick={() => startChatSession({
+                      _id: latestAppointment.id,
+                      counsellorId: latestAppointment.counsellor
+                    })}
+                    className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors flex items-center space-x-2"
+                  >
+                    <span>💬</span>
+                    <span>Start Chat</span>
+                  </button>
+                )}
                 <Link
                   to="/appointments"
                   className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
@@ -295,10 +341,105 @@ const StudentDashboard = () => {
           </div>
         )}
 
+        {/* Active Counsellor Sessions */}
+        {confirmedAppointments.length > 0 ? (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">💬 Chat with Your Counsellors</h2>
+            <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div className="space-y-4">
+                {confirmedAppointments.map((appointment, index) => (
+                  <div key={appointment._id || index} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                        {appointment.counsellorId?.name?.charAt(0) || 'C'}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">
+                          {appointment.counsellorId?.name || 'Counsellor'}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {appointment.mode === 'video' && '📹 Video Session'}
+                          {appointment.mode === 'tele' && '💻 Online Session'}  
+                          {appointment.mode === 'chat' && '💬 Chat Session'}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(appointment.slotStart).toLocaleDateString()} at{' '}
+                          {new Date(appointment.slotStart).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => startChatSession(appointment)}
+                        className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                      >
+                        <span>💬</span>
+                        <span>Chat</span>
+                      </button>
+                      {(appointment.mode === 'video' || appointment.mode === 'tele') && (
+                        <button
+                          onClick={() => startChatSession(appointment)}
+                          className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors flex items-center space-x-2"
+                        >
+                          <span>📹</span>
+                          <span>Video Call</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 pt-4 border-t text-center">
+                <p className="text-sm text-gray-600 mb-3">
+                  You can chat with your counsellors anytime during confirmed session periods
+                </p>
+                <Link
+                  to="/appointments"
+                  className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                >
+                  View All Appointments →
+                </Link>
+              </div>
+            </div>
+          </div>
+        ) : appointments.length > 0 && (
+          <div className="mb-8">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 p-6">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-3xl">💬</span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Ready to Connect?</h3>
+                <p className="text-gray-600 mb-4">
+                  Once your appointments are confirmed, you can start chatting and video calling with your counsellors directly from here.
+                </p>
+                <div className="flex justify-center space-x-3">
+                  <Link
+                    to="/appointments"
+                    className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
+                  >
+                    Check Appointment Status
+                  </Link>
+                  <Link
+                    to="/booking"
+                    className="px-4 py-2 bg-white text-indigo-600 border border-indigo-600 text-sm font-medium rounded-md hover:bg-indigo-50 transition-colors"
+                  >
+                    Book New Session
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Quick Actions */}
         <div className="mb-8">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {quickActions.map((action, index) => (
               <Link
                 key={index}
@@ -312,6 +453,34 @@ const StudentDashboard = () => {
                 </div>
               </Link>
             ))}
+            
+            {/* Dynamic Chat Session Button */}
+            {confirmedAppointments.length > 0 && (
+              <button
+                onClick={() => {
+                  console.log('Quick Action chat clicked')
+                  if (confirmedAppointments.length === 1) {
+                    // Direct chat if only one confirmed appointment
+                    startChatSession(confirmedAppointments[0])
+                  } else {
+                    // Navigate to appointments to choose
+                    navigate('/appointments')
+                  }
+                }}
+                className="p-6 rounded-lg border-2 transition-colors bg-blue-50 hover:bg-blue-100 border-blue-200"
+              >
+                <div className="text-center">
+                  <div className="text-3xl mb-3">💬</div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Start Chat Session</h3>
+                  <p className="text-sm text-gray-600">
+                    {confirmedAppointments.length === 1 
+                      ? `Chat with ${confirmedAppointments[0].counsellorId?.name || 'your counsellor'}`
+                      : 'Choose a counsellor to chat with'
+                    }
+                  </p>
+                </div>
+              </button>
+            )}
           </div>
         </div>
 
