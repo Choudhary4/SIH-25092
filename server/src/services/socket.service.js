@@ -295,7 +295,7 @@ class SocketService {
    * @param {Socket} socket - Socket.io socket instance
    * @param {Object} data - Message data
    */
-  handlePrivateMessage(socket, data) {
+  async handlePrivateMessage(socket, data) {
     try {
       const { recipientId, message, messageType = 'text', appointmentId } = data;
       const { userId, userName, userRole } = socket;
@@ -324,6 +324,51 @@ class SocketService {
         timestamp: new Date().toISOString(),
         read: false
       };
+
+      // Store message in appointment if appointmentId is provided
+      if (appointmentId) {
+        try {
+          const Appointment = require('../models/appointment.model');
+          const { encrypt } = require('../utils/encryption');
+          
+          const appointment = await Appointment.findById(appointmentId);
+          
+          if (appointment) {
+            // Check if user is part of this appointment
+            const isParticipant = 
+              appointment.studentId.toString() === userId ||
+              appointment.counsellorId.toString() === userId;
+              
+            if (isParticipant) {
+              // Create encrypted message for storage
+              const storedMessage = {
+                id: messageData.id,
+                senderId: userId,
+                senderName: userName,
+                senderRole: userRole,
+                recipientId,
+                message: encrypt(message.trim()),
+                messageType,
+                encrypted: true,
+                timestamp: new Date(),
+                sent: true
+              };
+
+              // Add message to appointment
+              if (!appointment.messages) {
+                appointment.messages = [];
+              }
+              appointment.messages.push(storedMessage);
+              
+              // Save appointment with new message
+              await appointment.save();
+            }
+          }
+        } catch (storageError) {
+          console.error('Error storing message in appointment:', storageError);
+          // Don't fail the message sending if storage fails
+        }
+      }
 
       // Send to recipient
       this.io.to(`user_${recipientId}`).emit('private_message', messageData);

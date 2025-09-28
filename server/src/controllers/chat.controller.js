@@ -429,9 +429,75 @@ function enhanceResponse(llmResponse, safetyCheck, context) {
   };
 }
 
+// @desc    Get message history for appointment chat
+// @route   GET /api/v1/chat/messages/:appointmentId
+// @access  Private (participants only)
+const getAppointmentMessages = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const userId = req.user.id;
+
+    const Appointment = require('../models/appointment.model');
+    const { decrypt } = require('../utils/encryption');
+
+    // Verify user has access to this appointment
+    const appointment = await Appointment.findById(appointmentId)
+      .populate('studentId', 'name email role')
+      .populate('counsellorId', 'name email role');
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found'
+      });
+    }
+
+    // Check if user is part of this appointment
+    const isParticipant = 
+      appointment.studentId._id.toString() === userId ||
+      appointment.counsellorId._id.toString() === userId;
+
+    if (!isParticipant) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied to this conversation'
+      });
+    }
+
+    // Get messages from appointment
+    const messages = appointment.messages || [];
+
+    // Decrypt messages if they exist
+    const decryptedMessages = messages.map(message => ({
+      ...message.toObject(),
+      message: message.encrypted ? decrypt(message.message) : message.message
+    }));
+
+    res.json({
+      success: true,
+      messages: decryptedMessages,
+      appointment: {
+        id: appointment._id,
+        studentId: appointment.studentId,
+        counsellorId: appointment.counsellorId,
+        mode: appointment.mode,
+        status: appointment.status
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching message history:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch message history'
+    });
+  }
+};
+
 module.exports = {
   sendChatMessage,
   getChatHistory,
   clearChatSession,
-  getChatAnalytics
+  getChatAnalytics,
+  getAppointmentMessages
 };

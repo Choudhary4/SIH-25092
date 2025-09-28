@@ -1,9 +1,8 @@
 const crypto = require('crypto');
 
 // Encryption configuration
-const ALGORITHM = 'aes-256-gcm';
-const IV_LENGTH = 16; // For GCM, 16 bytes is recommended
-const TAG_LENGTH = 16; // Authentication tag length
+const ALGORITHM = 'aes-256-cbc';
+const IV_LENGTH = 16; // For CBC, 16 bytes is standard
 const KEY_LENGTH = 32; // 256 bits key
 
 /**
@@ -41,16 +40,13 @@ const encrypt = (text) => {
 
     const key = getEncryptionKey();
     const iv = crypto.randomBytes(IV_LENGTH);
-    const cipher = crypto.createCipher(ALGORITHM, key);
-    cipher.setAAD(Buffer.from('appointment-notes', 'utf8')); // Additional authenticated data
+    const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
     
-    let encrypted = cipher.update(text, 'utf8', 'base64');
-    encrypted += cipher.final('base64');
+    let encrypted = cipher.update(text, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
     
-    const tag = cipher.getAuthTag();
-    
-    // Return combined format: iv:tag:encrypted
-    const combined = iv.toString('base64') + ':' + tag.toString('base64') + ':' + encrypted;
+    // Return combined format: iv:encrypted
+    const combined = iv.toString('hex') + ':' + encrypted;
     
     return combined;
     
@@ -72,22 +68,19 @@ const decrypt = (encryptedData) => {
       throw new Error('Encrypted data must be a non-empty string');
     }
 
-    // Split the combined format
+    // Split the combined format for CBC (iv:encrypted)
     const parts = encryptedData.split(':');
-    if (parts.length !== 3) {
+    if (parts.length !== 2) {
       throw new Error('Invalid encrypted data format');
     }
 
-    const iv = Buffer.from(parts[0], 'base64');
-    const tag = Buffer.from(parts[1], 'base64');
-    const encrypted = parts[2];
+    const iv = Buffer.from(parts[0], 'hex');
+    const encrypted = parts[1];
 
     const key = getEncryptionKey();
-    const decipher = crypto.createDecipher(ALGORITHM, key);
-    decipher.setAAD(Buffer.from('appointment-notes', 'utf8')); // Same AAD used in encryption
-    decipher.setAuthTag(tag);
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
     
-    let decrypted = decipher.update(encrypted, 'base64', 'utf8');
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     
     return decrypted;
@@ -110,7 +103,7 @@ const encryptCBC = (text) => {
 
     const key = getEncryptionKey();
     const iv = crypto.randomBytes(16); // CBC uses 16-byte IV
-    const cipher = crypto.createCipher('aes-256-cbc', key);
+    const cipher = crypto.createCipher('aes-256-cbc', key, iv);
     
     let encrypted = cipher.update(text, 'utf8', 'base64');
     encrypted += cipher.final('base64');
@@ -139,7 +132,7 @@ const decryptCBC = (encryptedData) => {
     const encrypted = parts[1];
 
     const key = getEncryptionKey();
-    const decipher = crypto.createDecipher('aes-256-cbc', key);
+    const decipher = crypto.createDecipher('aes-256-cbc', key, iv);
     
     let decrypted = decipher.update(encrypted, 'base64', 'utf8');
     decrypted += decipher.final('utf8');
