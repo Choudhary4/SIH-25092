@@ -268,7 +268,7 @@ class ChatPollingService {
   }
 }
 
-// Export for use in browser or Node.js
+// Export for use in browser or Node
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = ChatPollingService;
 } else if (typeof window !== 'undefined') {
