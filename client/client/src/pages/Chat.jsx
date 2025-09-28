@@ -14,6 +14,7 @@ const Chat = () => {
   const [messages, setMessages] = useState([])
   const [inputMessage, setInputMessage] = useState('')
   const [isConnected, setIsConnected] = useState(false)
+  const [buddyAgentConnected, setBuddyAgentConnected] = useState(null) // null = unknown, true = connected, false = disconnected
   const [isTyping, setIsTyping] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const [crisisModal, setCrisisModal] = useState({ isOpen: false, type: null })
@@ -98,8 +99,41 @@ const Chat = () => {
     scrollToBottom()
   }, [messages, isTyping])
 
+  // Check buddy agent health on mount and periodically
+  useEffect(() => {
+    const checkBuddyHealth = async () => {
+      try {
+        const buddyAgentUrl = import.meta.env.VITE_BUDDY_AGENT_URL || 'http://localhost:8000'
+        const response = await fetch(`${buddyAgentUrl}/health`, { 
+          method: 'GET',
+          signal: AbortSignal.timeout(3000) // 3 second timeout
+        })
+        setBuddyAgentConnected(response.ok)
+        console.log('🏥 Buddy agent health check:', response.ok ? 'Connected' : 'Disconnected')
+      } catch (error) {
+        setBuddyAgentConnected(false)
+        console.log('🏥 Buddy agent health check: Offline')
+      }
+    }
+
+    // Check immediately
+    checkBuddyHealth()
+
+    // Check every 30 seconds
+    const healthInterval = setInterval(checkBuddyHealth, 30000)
+
+    return () => clearInterval(healthInterval)
+  }, [])
+
   // Send welcome message on mount
   useEffect(() => {
+    console.log('🤖 Buddy Chat Component Loaded')
+    console.log('📊 Environment:', {
+      buddyAgentUrl: import.meta.env.VITE_BUDDY_AGENT_URL || 'http://localhost:8000',
+      socketUrl: import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000',
+      apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+    })
+    
     const welcomeMessage = {
       id: 'welcome',
       text: 'Hi! I\'m Buddy, your mental health companion. I\'m here to listen and support you. You can chat with me using text or switch to voice mode for spoken conversations. How are you feeling today?',
@@ -133,6 +167,8 @@ const Chat = () => {
       setInputMessage(transcript)
       setIsListening(false)
 
+      console.log('🎤 Voice recognition captured:', transcript)
+
       // Add user message to chat
       const userMessage = {
         id: Date.now(),
@@ -146,54 +182,90 @@ const Chat = () => {
       // Send to voice agent and handle response
       try {
         setIsSending(true)
-        const response = await fetch("http://localhost:8000/chat", {
+        console.log('🔄 Sending to buddy voice agent...')
+        
+        const buddyAgentUrl = import.meta.env.VITE_BUDDY_AGENT_URL || 'http://localhost:8000'
+        const response = await fetch(`${buddyAgentUrl}/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             text: transcript,
-            session_id: "user123",   // or any unique per-user ID
+            session_id: `voice_session_${Date.now()}`,
             response_format: "json"
           })
         })
 
+        console.log('📡 Buddy API response status:', response.status)
+
         if (response.ok) {
           const data = await response.json()
+          console.log('✅ Buddy API response data:', data)
           
           // Create audio blob from base64
-          const audioBytes = atob(data.audio_base64)
-          const audioArray = new Uint8Array(audioBytes.length)
-          for (let i = 0; i < audioBytes.length; i++) {
-            audioArray[i] = audioBytes.charCodeAt(i)
-          }
-          const audioBlob = new Blob([audioArray], { type: 'audio/mp3' })
-          const audioUrl = URL.createObjectURL(audioBlob)
-          const audio = new Audio(audioUrl)
-          
-          // Add bot message with both text and audio
-          const botMessage = {
-            id: Date.now() + 1,
-            text: data.text,
-            sender: 'bot',
-            timestamp: new Date(),
-            isVoice: true,
-            audioUrl: audioUrl
-          }
-          setMessages(prev => [...prev, botMessage])
-          
-          // Play audio response automatically
-          audio.play().catch(console.error)
-          
-          // Cleanup URL after audio ends
-          audio.onended = () => {
-            URL.revokeObjectURL(audioUrl)
+          if (data.audio_base64) {
+            console.log('🔊 Processing audio response...')
+            const audioBytes = atob(data.audio_base64)
+            const audioArray = new Uint8Array(audioBytes.length)
+            for (let i = 0; i < audioBytes.length; i++) {
+              audioArray[i] = audioBytes.charCodeAt(i)
+            }
+            const audioBlob = new Blob([audioArray], { type: 'audio/mp3' })
+            const audioUrl = URL.createObjectURL(audioBlob)
+            const audio = new Audio(audioUrl)
+            
+            // Add bot message with both text and audio
+            const botMessage = {
+              id: Date.now() + 1,
+              text: data.text,
+              sender: 'bot',
+              timestamp: new Date(),
+              isVoice: true,
+              audioUrl: audioUrl,
+              audioBase64: data.audio_base64
+            }
+            setMessages(prev => [...prev, botMessage])
+            
+            // Play audio response automatically
+            console.log('▶️ Playing audio response...')
+            audio.play().catch(err => {
+              console.error('❌ Audio playback error:', err)
+            })
+            
+            // Cleanup URL after audio ends
+            audio.onended = () => {
+              URL.revokeObjectURL(audioUrl)
+              console.log('🗑️ Audio URL cleaned up')
+            }
+          } else {
+            console.warn('⚠️ No audio in response')
+            // Add text-only message
+            const botMessage = {
+              id: Date.now() + 1,
+              text: data.text || 'I received your message but couldn\'t generate audio.',
+              sender: 'bot',
+              timestamp: new Date(),
+              isVoice: false
+            }
+            setMessages(prev => [...prev, botMessage])
           }
         } else {
-          throw new Error('Voice service unavailable')
+          const errorText = await response.text()
+          console.error('❌ Buddy API error:', response.status, errorText)
+          throw new Error(`Voice service error: ${response.status} - ${errorText}`)
         }
       } catch (error) {
-        console.error('Voice service error:', error)
-        // Fallback to text response via regular chat
-        await sendMessage(transcript)
+        console.error('❌ Voice service connection error:', error)
+        const errorMessage = {
+          id: Date.now() + 1,
+          text: 'Sorry, I had trouble processing your voice message. The voice service might be unavailable.',
+          sender: 'bot',
+          timestamp: new Date(),
+          isError: true
+        }
+        setMessages(prev => [...prev, errorMessage])
+        
+        // Optionally fallback to text chat
+        console.log('🔄 Could try fallback to regular text chat...')
       } finally {
         setIsSending(false)
         setInputMessage('')
@@ -254,6 +326,8 @@ const Chat = () => {
     const textToSend = messageText || inputMessage.trim()
     if (!textToSend || isSending) return
 
+    console.log('💬 Sending message:', textToSend, '| Voice Mode:', isVoiceMode)
+
     const userMessage = {
       id: Date.now(),
       text: textToSend,
@@ -272,84 +346,160 @@ const Chat = () => {
     try {
       let responseReceived = false
 
-      // Send via both API and Socket.io
-      const apiPromise = post('/v1/chat/message', {
-        message: textToSend,
-        severity: severity,
-        timestamp: new Date().toISOString()
-      })
-
-      // Emit socket event for real-time response
-      if (socketRef.current?.connected) {
-        socketRef.current.emit('user_message', {
-          message: textToSend,
-          severity: severity,
-          timestamp: new Date().toISOString()
-        })
-      }
-
-      try {
-        // Wait for API response as backup
-        const response = await apiPromise
-        
-        // If socket didn't respond, use API response
-        if (response.data && !isTyping) {
-          const botMessage = {
-            id: Date.now() + 1,
-            text: response.data.message,
-            sender: 'bot',
-            timestamp: new Date(),
-            suggestedActions: response.data.suggestedActions || []
-          }
-          setMessages(prev => [...prev, botMessage])
-
-          // Handle crisis escalation from API response
-          if (response.data.suggestedActions?.includes('crisis_escalation')) {
-            setCrisisModal({ isOpen: true, type: 'escalation' })
-          }
-          responseReceived = true
-        }
-      } catch (serverError) {
-        console.warn('Main server unavailable, trying voice agent fallback:', serverError)
-        
-        // Fallback to voice agent for text response
+      // Primary: Try buddy agent first (voice or text mode)
+      if (isVoiceMode) {
+        console.log('🎤 Using buddy voice agent...')
         try {
-          const voiceResponse = await fetch("http://localhost:8000/chat/text", {
+          const buddyAgentUrl = import.meta.env.VITE_BUDDY_AGENT_URL || 'http://localhost:8000'
+          const voiceResponse = await fetch(`${buddyAgentUrl}/chat`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               text: textToSend,
-              session_id: "user123"
+              session_id: `voice_session_${Date.now()}`,
+              response_format: "json"
             })
           })
 
+          console.log('📡 Voice agent response status:', voiceResponse.status)
+
           if (voiceResponse.ok) {
             const voiceData = await voiceResponse.json()
+            console.log('✅ Voice agent response:', voiceData)
+            setBuddyAgentConnected(true)
+            
             const botMessage = {
               id: Date.now() + 1,
               text: voiceData.text,
               sender: 'bot',
               timestamp: new Date(),
-              suggestedActions: []
+              isVoice: true,
+              audioBase64: voiceData.audio_base64
             }
             setMessages(prev => [...prev, botMessage])
             responseReceived = true
+
+            // Play audio if available
+            if (voiceData.audio_base64) {
+              try {
+                console.log('🔊 Playing audio response...')
+                const audioBlob = new Blob(
+                  [Uint8Array.from(atob(voiceData.audio_base64), c => c.charCodeAt(0))], 
+                  { type: 'audio/mp3' }
+                )
+                const audioUrl = URL.createObjectURL(audioBlob)
+                const audio = new Audio(audioUrl)
+                audio.play().catch(err => {
+                  console.error('❌ Audio playback error:', err)
+                })
+                audio.onended = () => URL.revokeObjectURL(audioUrl)
+              } catch (audioError) {
+                console.error('❌ Audio processing error:', audioError)
+              }
+            }
+          } else {
+            const errorText = await voiceResponse.text()
+            console.error('❌ Voice agent error:', voiceResponse.status, errorText)
           }
         } catch (voiceError) {
-          console.error('Voice agent also unavailable:', voiceError)
+          console.error('❌ Voice agent request failed:', voiceError)
+          setBuddyAgentConnected(false)
+        }
+      } else {
+        console.log('📝 Using buddy text agent...')
+        try {
+          const buddyAgentUrl = import.meta.env.VITE_BUDDY_AGENT_URL || 'http://localhost:8000'
+          const textResponse = await fetch(`${buddyAgentUrl}/chat/text`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text: textToSend,
+              session_id: `text_session_${Date.now()}`
+            })
+          })
+
+          console.log('📡 Text agent response status:', textResponse.status)
+
+          if (textResponse.ok) {
+            const textData = await textResponse.json()
+            console.log('✅ Text agent response:', textData)
+            setBuddyAgentConnected(true)
+            
+            const botMessage = {
+              id: Date.now() + 1,
+              text: textData.text,
+              sender: 'bot',
+              timestamp: new Date(),
+              isVoice: false
+            }
+            setMessages(prev => [...prev, botMessage])
+            responseReceived = true
+          } else {
+            const errorText = await textResponse.text()
+            console.error('❌ Text agent error:', textResponse.status, errorText)
+          }
+        } catch (textError) {
+          console.error('❌ Text agent request failed:', textError)
+          setBuddyAgentConnected(false)
         }
       }
 
-      // If no response received from any service, show error
+      // Fallback: Try original server API if buddy agent fails
       if (!responseReceived) {
+        console.log('🔄 Falling back to original server API...')
+        try {
+          const apiPromise = post('/v1/chat/message', {
+            message: textToSend,
+            severity: severity,
+            timestamp: new Date().toISOString()
+          })
+
+          // Emit socket event for real-time response
+          if (socketRef.current?.connected) {
+            console.log('📡 Emitting socket message...')
+            socketRef.current.emit('user_message', {
+              message: textToSend,
+              severity: severity,
+              timestamp: new Date().toISOString()
+            })
+          }
+
+          // Wait for API response
+          const response = await apiPromise
+          console.log('✅ Fallback API response:', response)
+          
+          if (response?.data?.message) {
+            const botMessage = {
+              id: Date.now() + 1,
+              text: response.data.message,
+              sender: 'bot',
+              timestamp: new Date(),
+              suggestedActions: response.data.suggestedActions || []
+            }
+            setMessages(prev => [...prev, botMessage])
+
+            // Handle crisis escalation from API response
+            if (response.data.suggestedActions?.includes('crisis_escalation')) {
+              setCrisisModal({ isOpen: true, type: 'escalation' })
+            }
+            responseReceived = true
+          }
+        } catch (serverError) {
+          console.error('❌ Fallback API error:', serverError)
+        }
+      }
+
+      // Final fallback: Show error if nothing worked
+      if (!responseReceived) {
+        console.warn('⚠️ No response received from any service')
         throw new Error('All services unavailable')
       }
 
     } catch (error) {
-      console.error('Error sending message:', error)
+      console.error('❌ General error in sendMessage:', error)
       const errorMessage = {
         id: Date.now() + 2,
-        text: 'Sorry, I\'m having trouble responding right now. Please try again in a moment.',
+        text: 'Sorry, I\'m having trouble responding right now. Please check the console for details and try again.',
         sender: 'system',
         timestamp: new Date(),
         isError: true
@@ -498,10 +648,18 @@ const Chat = () => {
             </div>
 
             {/* Audio Player for Voice Responses */}
-            {message.audioUrl && (
+            {(message.audioUrl || message.audioBase64) && (
               <div className="mt-2">
                 <audio controls className="w-full max-w-xs">
-                  <source src={message.audioUrl} type="audio/mp3" />
+                  {message.audioUrl && (
+                    <source src={message.audioUrl} type="audio/mp3" />
+                  )}
+                  {message.audioBase64 && (
+                    <source 
+                      src={`data:audio/mp3;base64,${message.audioBase64}`} 
+                      type="audio/mp3" 
+                    />
+                  )}
                   Your browser does not support the audio element.
                 </audio>
               </div>
@@ -575,7 +733,15 @@ const Chat = () => {
                 <div className={`w-2 h-2 rounded-full mr-2 ${
                   isConnected ? 'bg-green-400' : 'bg-red-400'
                 }`} />
-                {isConnected ? 'Online' : 'Offline'} • {severityLevel && `Severity: ${severityLevel}`}
+                Server: {isConnected ? 'Online' : 'Offline'} • 
+                <div className={`w-2 h-2 rounded-full mx-2 ${
+                  buddyAgentConnected === true ? 'bg-green-400' : 
+                  buddyAgentConnected === false ? 'bg-red-400' : 'bg-yellow-400'
+                }`} />
+                Buddy: {
+                  buddyAgentConnected === true ? 'Online' : 
+                  buddyAgentConnected === false ? 'Offline' : 'Checking...'
+                } {severityLevel && ` • Severity: ${severityLevel}`}
               </div>
             </div>
           </div>
