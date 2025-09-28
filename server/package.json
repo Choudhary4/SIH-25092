@@ -5,6 +5,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
+    "vercel-build": "echo 'Building for Vercel...'",
+    "build": "echo 'No build step required for Node.js'",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
