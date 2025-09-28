@@ -253,16 +253,16 @@ const Forum = () => {
 
   const getCategoryColor = (category) => {
     const colors = {
-      general: 'bg-gradient-to-r from-gray-500 to-gray-600 text-white',
-      academic_stress: 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white',
-      anxiety_depression: 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white', 
-      relationships: 'bg-gradient-to-r from-pink-500 to-rose-600 text-white',
-      family_issues: 'bg-gradient-to-r from-green-500 to-emerald-600 text-white',
-      peer_pressure: 'bg-gradient-to-r from-orange-500 to-amber-600 text-white',
-      self_esteem: 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white',
-      study_motivation: 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white',
-      career_confusion: 'bg-gradient-to-r from-yellow-500 to-orange-600 text-white',
-      social_anxiety: 'bg-gradient-to-r from-red-500 to-pink-600 text-white'
+      general: 'bg-teal-600 text-white',
+      academic_stress: 'bg-teal-700 text-white',
+      anxiety_depression: 'bg-teal-500 text-white', 
+      relationships: 'bg-emerald-600 text-white',
+      family_issues: 'bg-green-600 text-white',
+      peer_pressure: 'bg-amber-600 text-white',
+      self_esteem: 'bg-cyan-600 text-white',
+      study_motivation: 'bg-teal-800 text-white',
+      career_confusion: 'bg-orange-600 text-white',
+      social_anxiety: 'bg-red-600 text-white'
     };
     return colors[category] || colors.general;
   };
@@ -354,16 +354,16 @@ const Forum = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: '#F9F7F4' }}>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-teal-800 rounded-full mb-4">
             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           </div>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+          <h1 className="text-5xl font-bold text-teal-800 mb-4">
             Peer Talk
           </h1>
           <p className="text-xl text-gray-600 mb-3 max-w-2xl mx-auto leading-relaxed">
@@ -371,24 +371,24 @@ const Forum = () => {
           </p>
           <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-500">
             <div className="flex items-center">
-              <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+              <span className="w-2 h-2 bg-teal-600 rounded-full mr-2"></span>
               All posts are anonymous
             </div>
             <div className="flex items-center">
-              <span className="w-2 h-2 bg-blue-400 rounded-full mr-2"></span>
+              <span className="w-2 h-2 bg-teal-600 rounded-full mr-2"></span>
               Content is moderated
             </div>
             <div className="flex items-center">
-              <span className="w-2 h-2 bg-purple-400 rounded-full mr-2"></span>
+              <span className="w-2 h-2 bg-teal-600 rounded-full mr-2"></span>
               Trained peer volunteers respond
             </div>
           </div>
         </div>
 
         {/* Trained Peers Section */}
-        <div className="bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50 rounded-2xl p-8 mb-10 border border-emerald-200 shadow-lg">
+        <div className="rounded-2xl p-8 mb-10 border border-gray-200 shadow-lg" style={{ backgroundColor: '#F9E6D0' }}>
           <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-emerald-500 to-blue-600 rounded-xl mb-3">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-teal-800 rounded-xl mb-3">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
@@ -400,21 +400,21 @@ const Forum = () => {
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {trainedPeers.map(peer => (
-              <div key={peer.id} className="bg-white rounded-xl p-6 border border-white shadow-sm hover:shadow-md transition-all duration-300 hover:transform hover:scale-105">
+              <div key={peer.id} className="bg-white rounded-xl p-6 border border-gray-200 shadow-md hover:shadow-lg transition-all duration-300 hover:transform hover:scale-105">
                 <div className="text-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <div className="w-12 h-12 bg-teal-800 rounded-full flex items-center justify-center mx-auto mb-3">
                     <span className="text-white font-semibold text-lg">🎓</span>
                   </div>
                   <div className="flex items-center justify-center mb-2">
                     <span className="font-semibold text-gray-900 text-sm">{peer.name}</span>
                     {peer.verified && (
-                      <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                      <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: '#F0FDFA', color: '#0F766E' }}>
                         ✓ Verified
                       </span>
                     )}
                   </div>
                   <p className="text-sm text-gray-600 mb-3">{peer.specialization}</p>
-                  <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: '#F0FDFA', color: '#0F766E' }}>
                     {peer.responses} helpful responses
                   </div>
                 </div>
@@ -427,8 +427,8 @@ const Forum = () => {
         <div className="flex flex-col sm:flex-row justify-between items-center mb-8 space-y-4 sm:space-y-0">
           <div className="flex items-center space-x-8">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-teal-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               </div>
@@ -448,7 +448,7 @@ const Forum = () => {
               console.log('New Post button clicked');
               setShowNewPostModal(true);
             }}
-            className="group bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center space-x-3"
+            className="group bg-teal-800 text-white px-8 py-3 rounded-xl font-semibold hover:bg-teal-900 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center space-x-3"
           >
             <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-colors">
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -479,7 +479,7 @@ const Forum = () => {
           <div className="flex flex-col items-center justify-center py-20">
             <div className="relative">
               <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200"></div>
-              <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-600 border-t-transparent absolute top-0"></div>
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-teal-800 border-t-transparent absolute top-0"></div>
             </div>
             <div className="mt-6 text-center">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading discussions...</h3>
@@ -491,8 +491,8 @@ const Forum = () => {
             {/* Threads List */}
             <div className="space-y-6 mb-8">
               {threads.length === 0 ? (
-                <div className="text-center py-16 bg-gradient-to-br from-gray-50 to-blue-50 rounded-2xl border-2 border-dashed border-gray-200">
-                  <div className="w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="text-center py-16 rounded-2xl border-2 border-dashed border-gray-200" style={{ backgroundColor: '#F9E6D0' }}>
+                  <div className="w-20 h-20 bg-teal-800 rounded-full flex items-center justify-center mx-auto mb-6">
                     <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
@@ -501,7 +501,7 @@ const Forum = () => {
                   <p className="text-gray-600 mb-6 max-w-md mx-auto">Be the first to start a meaningful conversation in our supportive community</p>
                   <button
                     onClick={() => setShowNewPostModal(true)}
-                    className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                    className="bg-teal-800 text-white px-8 py-3 rounded-xl font-semibold hover:bg-teal-900 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
                   >
                     Create First Post
                   </button>
@@ -510,14 +510,14 @@ const Forum = () => {
                 threads.map((thread) => (
                   <div
                     key={thread.id}
-                    className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 hover:border-indigo-200 group"
+                    className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 hover:border-teal-200 group"
                   >
                     <div className="p-8">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3 mb-4">
                             <h3 
-                              className="text-xl font-bold text-gray-900 hover:text-indigo-600 cursor-pointer transition-colors group-hover:text-indigo-600"
+                              className="text-xl font-bold text-gray-900 hover:text-teal-800 cursor-pointer transition-colors group-hover:text-teal-800"
                               onClick={() => handleThreadClick(thread)}
                             >
                               {thread.title}
@@ -539,7 +539,7 @@ const Forum = () => {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-6 text-sm text-gray-500">
                               <div className="flex items-center space-x-2">
-                                <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
+                                <div className="w-8 h-8 bg-teal-800 rounded-full flex items-center justify-center">
                                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                   </svg>
@@ -556,7 +556,7 @@ const Forum = () => {
                             </div>
                             
                             {thread.replyCount > 0 && (
-                              <div className="flex items-center space-x-2 bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full">
+                              <div className="flex items-center space-x-2 px-3 py-1 rounded-full" style={{ backgroundColor: '#F0FDFA', color: '#0F766E' }}>
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                 </svg>
@@ -605,7 +605,7 @@ const Forum = () => {
                         onClick={() => handlePageChange(page)}
                         className={`w-10 h-10 text-sm font-semibold rounded-xl transition-all ${
                           currentPage === page
-                            ? 'text-white bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg transform scale-105'
+                            ? 'text-white bg-teal-800 shadow-lg transform scale-105'
                             : 'text-gray-600 bg-gray-50 hover:bg-gray-100'
                         }`}
                       >
@@ -792,7 +792,7 @@ const Forum = () => {
                         } ${
                           isUserCertifiedPeer() 
                             ? 'focus:ring-green-500 focus:border-green-500' 
-                            : 'focus:ring-blue-500 focus:border-blue-500'
+                            : 'focus:ring-teal-800 focus:border-teal-800'
                         }`}
                         placeholder={isUserCertifiedPeer() 
                           ? "Provide supportive, professional guidance as a certified peer supporter... (at least 10 characters)"
@@ -910,7 +910,7 @@ const Forum = () => {
                         id="category"
                         value={newPost.category}
                         onChange={(e) => setNewPost({ ...newPost, category: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-800 focus:border-teal-800"
                       >
                         <option value="">Select a category</option>
                         <option value="general">General Support</option>
@@ -936,7 +936,7 @@ const Forum = () => {
                         id="title"
                         value={newPost.title}
                         onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-                        className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${
+                        className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-teal-800 focus:border-teal-800 ${
                           newPost.title.length > 0 && (newPost.title.length < 5 || newPost.title.length > 200)
                             ? 'border-red-300 bg-red-50'
                             : 'border-gray-300'
@@ -969,7 +969,7 @@ const Forum = () => {
                         rows={6}
                         value={newPost.content}
                         onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-                        className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 resize-none ${
+                        className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-teal-800 focus:border-teal-800 resize-none ${
                           newPost.content.length > 0 && (newPost.content.length < 10 || newPost.content.length > 5000)
                             ? 'border-red-300 bg-red-50'
                             : 'border-gray-300'
@@ -1005,14 +1005,14 @@ const Forum = () => {
                       <button
                         type="button"
                         onClick={() => setShowNewPostModal(false)}
-                        className="flex-1 bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        className="flex-1 bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-800"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         disabled={submittingPost || newPost.title.trim().length < 5 || newPost.content.trim().length < 10}
-                        className="flex-1 bg-indigo-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 bg-teal-800 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-teal-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-800 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {submittingPost ? (
                           <div className="flex items-center justify-center">
